@@ -5,3 +5,4 @@ __pycache__/
 # game related
 vendor/
 data/
+gamestate.json
