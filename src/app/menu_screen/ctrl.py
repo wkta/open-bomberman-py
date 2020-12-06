@@ -1,3 +1,4 @@
+import glvars
 from app.menu_screen.model import MenuScreenModel
 from bm_defs import GameStates
 from coremon_main import PygameBridge, EngineEvTypes, EventReceiver
@@ -27,7 +28,7 @@ class MenuScreenCtrl(EventReceiver):
                     self.pev(EngineEvTypes.GAMEENDS)
 
                 elif self._mod.selection == MenuScreenModel.NETWCONFIG_CODE:
-                    self.pev(EngineEvTypes.OUTGOINGNETW, host='wallet.gaudia-tech.com', resource='/', num=666)
+                    self.pev(EngineEvTypes.OUTGOINGNETW, host=glvars.host, resource='/', num=666)
 
                 elif self._mod.selection == MenuScreenModel.MULTI_CODE:
                     self.pev(EngineEvTypes.PUSHSTATE, state_ident=GameStates.ClickChallg)

@@ -1,3 +1,4 @@
+import glvars
 from bm_defs import MyEvTypes
 from coremon_main import CogObject
 from mirror.WorldModel import WorldModel
@@ -13,6 +14,10 @@ class LocalWorld(CogObject):
         self.gameworld = WorldModel()
 
     def load_state(self, serial):
+        if glvars.DEV_MODE:
+            print('loading new state in LocalWorld: serial= ', end='')
+            print(serial)
+
         self.gameworld.load_state(serial)
         self.pev(MyEvTypes.WorldChanges, newstate=self.gameworld.state)
 

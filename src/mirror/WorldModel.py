@@ -10,5 +10,4 @@ class WorldModel:
         self.state = dict()
 
     def load_state(self, json_str):
-        print('model synchronizing...')
         self.state = {1: json.loads(json_str)}
