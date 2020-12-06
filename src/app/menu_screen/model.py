@@ -4,7 +4,7 @@ from coremon_main import CogObject
 
 class MenuScreenModel(CogObject):
 
-    QUIT_OPTION = 3
+    SOLO_CODE, MULTI_CODE, NETWCONFIG_CODE, QUIT_OPTION = range(4)
 
     def __init__(self):
         super().__init__()
