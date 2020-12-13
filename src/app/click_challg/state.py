@@ -1,3 +1,4 @@
+import socketio_bridge
 from app.click_challg.ctrl import ClickChallgCtrl
 from app.click_challg.view import ClickChallgView
 from coremon_main import BaseGameState
@@ -18,6 +19,7 @@ class ClickChallgState(BaseGameState):
 
         self.c = ClickChallgCtrl(self.m)
         self.c.turn_on()
+        socketio_bridge.enable()
 
     def release(self):
         print('ClickChallg state released.')
@@ -25,3 +27,5 @@ class ClickChallgState(BaseGameState):
         self.c = None
         self.v.turn_off()
         self.v = None
+
+        socketio_bridge.disable()

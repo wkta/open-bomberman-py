@@ -1,7 +1,6 @@
-import time
-
-import glvars
+from bm_defs import MyEvTypes
 from coremon_main import PygameBridge, EngineEvTypes, EventReceiver
+import socketio_bridge
 
 
 code_do_synchro = 998767
@@ -11,39 +10,53 @@ class ClickChallgCtrl(EventReceiver):
 
     def __init__(self, mod):
         super().__init__()
+        self._is_sync = False
+
         self._last_sync = None
         self._mod = mod
 
     def proc_event(self, ev, source=None):
+        dirty_local_pl_code = 1
+
         if ev.type == EngineEvTypes.LOGICUPDATE:
-            if self._last_sync is None:
-                self.pev(EngineEvTypes.OUTGOINGNETW, host=glvars.host, resource='/move/1/-1', num=code_do_synchro)
-                self._last_sync = time.time()
+            if not self._is_sync:
+                socketio_bridge.push_movement(dirty_local_pl_code, -1)  # provoque refresh position
+                self._is_sync = True
 
-            else:
-                tnow = time.time()
-                dt = tnow - self._last_sync
-                if dt > 5.0:  # polling, freq 5sec
-                    self.pev(EngineEvTypes.OUTGOINGNETW, host=glvars.host, resource='/move/1/-1', num=code_do_synchro)
-                    self._last_sync = tnow
+            # -desactivé depuis quon utilise WS
+            # if self._last_sync is None:
+            #     self.pev(EngineEvTypes.OUTGOINGNETW, host=glvars.host, resource='/move/1/-1', num=code_do_synchro)
+            #     self._last_sync = time.time()
+            #
+            # else:
+            #     tnow = time.time()
+            #     dt = tnow - self._last_sync
+            #     if dt > 5.0:  # polling, freq 5sec
+            #         self.pev(EngineEvTypes.OUTGOINGNETW, host=glvars.host, resource='/move/1/-1', num=code_do_synchro)
+            #         self._last_sync = tnow
 
-        elif ev.type == EngineEvTypes.INGOINGNETW:
-            if ev.num == code_do_synchro:
-                self._mod.load_state(ev.msg)
+        elif ev.type == MyEvTypes.PlayerMoved:
+            print('ctrler receiving PlayerMoved evnt')
+            self._mod.set_pos_from_netw(ev.plcode, ev.new_pos)
 
         elif ev.type == PygameBridge.KEYDOWN:
             if ev.key == PygameBridge.K_ESCAPE:
                 self.pev(EngineEvTypes.POPSTATE)
 
             elif ev.key == PygameBridge.K_RIGHT:
-                self.mvt_serv_side(0)
+                ClickChallgCtrl.mvt_serv_side(dirty_local_pl_code, 0)
             elif ev.key == PygameBridge.K_UP:
-                self.mvt_serv_side(1)
+                ClickChallgCtrl.mvt_serv_side(dirty_local_pl_code, 1)
             elif ev.key == PygameBridge.K_LEFT:
-                self.mvt_serv_side(2)
+                ClickChallgCtrl.mvt_serv_side(dirty_local_pl_code, 2)
             elif ev.key == PygameBridge.K_DOWN:
-                self.mvt_serv_side(3)
+                ClickChallgCtrl.mvt_serv_side(dirty_local_pl_code, 3)
 
-    def mvt_serv_side(self, direct):
-        nimp = code_do_synchro // 2
-        self.pev(EngineEvTypes.OUTGOINGNETW, host=glvars.host, resource='/move/1/{}'.format(direct), num=nimp)
+    @staticmethod
+    def mvt_serv_side(local_plcode, direct):
+        # - the old way
+        # nimp = code_do_synchro // 2
+        # self.pev(EngineEvTypes.OUTGOINGNETW, host=glvars.host, resource='/move/1/{}'.format(direct), num=nimp)
+
+        # - the new way
+        socketio_bridge.push_movement(local_plcode, direct)

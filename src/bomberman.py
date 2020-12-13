@@ -9,8 +9,8 @@ from glvars import SCR_SIZE, GAME_TITLE
 
 
 # 16h30
-if coremon_main.vernum != '0.0.4':
-    print('err! expected version of coremon==0.0.4')
+if coremon_main.vernum != '0.0.5':
+    print('err! expected version of coremon>=0.0.5')
     sys.exit(1)
 
 

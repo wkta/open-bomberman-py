@@ -12,6 +12,7 @@ GameStates = enum_starting_from_zero(
 # custom events
 MyEvTypes = enum_for_custom_event_types(
     'PlSelectsMode',  # contains info: ev.k
+    'PlayerMoved',  # used for sync as well! Contains: plcode, new_pos
     'WorldChanges',
     'ChallengeStarts',
 )

@@ -1,9 +1,11 @@
-from flask import Flask, render_template
+# from flask import Flask, render_template
 from flask_socketio import SocketIO
 import argparse
-from flask import Flask, jsonify
 import hashlib
 import json
+# from flask_socketio import send -> whats the diff between emit and send??
+from flask_socketio import emit
+from flask import Flask, jsonify
 
 
 # app = Flask(__name__)
@@ -28,10 +30,11 @@ import json
 
 
 app = Flask(__name__)
+socketio = SocketIO(app)
+
 _parser = argparse.ArgumentParser(add_help=False)
 _parser.add_argument('-h', '--host', help='specify host', required=True)
 _parser.add_argument('-p', '--port', help='specify port', required=True)
-
 
 cpt = 0
 gamestate = dict()
@@ -57,12 +60,9 @@ def index():
     return "hello there, req #{}".format(cpt)
 
 
-@app.route('/move/<plcode>/<direct>')
-def move(plcode, direct):  # can use with direct==-1 to just query the position...
-    global gs_init, BSUP
-    if not gs_init:
-        loadstate()
-
+def maj_gamestate(plcode: int, direct: int):
+    print(' SERV: maj gamestate')
+    global gamestate
     k = int(plcode)
     d = int(direct)
     if d == 0:
@@ -85,7 +85,14 @@ def move(plcode, direct):  # can use with direct==-1 to just query the position.
         if gamestate[k][1] > BSUP:
             gamestate[k][1] = BSUP
 
-    return jsonify(gamestate[k])
+
+@app.route('/move/<plcode>/<direct>')
+def move(plcode, direct):  # can use with direct==-1 to just query the position...
+    global gs_init, gamestate, BSUP
+    if not gs_init:
+        loadstate()
+    maj_gamestate(int(plcode), int(direct))
+    return jsonify(gamestate[int(plcode)])
 
 
 @app.route('/statesig')
@@ -107,7 +114,41 @@ def save():
     pass
 
 
+@socketio.on('pushmove')
+def handle_pushmove(givendata):
+    global gs_init, gamestate
+    print('received pushmove')
+    if not gs_init:
+        loadstate()
+
+    margs = givendata['margs']
+    plcode = int(margs[0])
+    maj_gamestate(plcode, int(margs[1]))
+    i, j = gamestate[plcode]
+    emit('player_moved', {'code': plcode, 'newpos': [i, j]})
+
+
+# @socketio.on('move')
+# def move(data):
+#     emit('death', {'data': ''})
+
+
+@socketio.on('connect')
+def test_connect():
+    emit('serv response', {'data': 'Connected'})
+    # time.sleep(5)
+    # emit('death', {'data': None})
+
+
+@socketio.on('disconnect')
+def test_disconnect():
+    print('Client disconnected')
+
+
 tmp = _parser.parse_args()
 print(tmp.host)
 print(tmp.port)
-app.run(host=tmp.host, port=tmp.port)
+
+if __name__ == '__main__':
+    socketio.run(app, port=int(tmp.port))  # , host=tmp.host, port=tmp.port)
+    # app.run(host=tmp.host, port=tmp.port)

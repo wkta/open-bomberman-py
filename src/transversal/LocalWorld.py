@@ -13,13 +13,19 @@ class LocalWorld(CogObject):
         super().__init__()
         self.gameworld = WorldModel()
 
-    def load_state(self, serial):
-        if glvars.DEV_MODE:
-            print('loading new state in LocalWorld: serial= ', end='')
-            print(serial)
+    def set_pos_from_netw(self, plcode, ij_pos):
+        self.gameworld.state[plcode] = ij_pos
 
-        self.gameworld.load_state(serial)
         self.pev(MyEvTypes.WorldChanges, newstate=self.gameworld.state)
+
+    # était utilisé avant websockets
+    # def load_state(self, serial):
+    #     if glvars.DEV_MODE:
+    #         print('loading new state in LocalWorld: serial= ', end='')
+    #         print(serial)
+    #
+    #     self.gameworld.load_state(serial)
+    #     self.pev(MyEvTypes.WorldChanges, newstate=self.gameworld.state)
 
     @property
     def gridsize(self):
