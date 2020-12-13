@@ -2,8 +2,9 @@ import socketio
 
 import coremon_main
 import glvars
-from bm_defs import MyEvTypes
 from coremon_main import EventManager, CgmEvent
+from defs_bombm import MyEvTypes
+
 
 NEED_DEBUG = False
 if NEED_DEBUG:
@@ -25,6 +26,7 @@ def push_movement(plcode, direct):
     margs = [plcode, direct]
     print('** pushing mvt to server using ws | margs will be: {}, {}**'.format(1, direct))
     sio.emit('pushmove', {'margs': margs})
+    # triggers the server to send player_moved
 
 
 # ------------------ remote events(generic) ------------------
@@ -52,7 +54,7 @@ def handle_player_moved(data):
     newpos = data['newpos']
     print('**receiving feedback from server: code= {}, newpos={} **'.format(code, newpos))
 
-    EventManager.instance().post(CgmEvent(MyEvTypes.PlayerMoved, plcode=code, new_pos=newpos))
+    EventManager.instance().post(CgmEvent(MyEvTypes.GamestateServFeedback, plcode=code, new_pos=newpos))
 
 
 @sio.event

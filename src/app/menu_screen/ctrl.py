@@ -1,7 +1,7 @@
 import glvars
 from app.menu_screen.model import MenuScreenModel
-from bm_defs import GameStates
 from coremon_main import PygameBridge, EngineEvTypes, EventReceiver
+from defs_bombm import GameStates
 
 
 class MenuScreenCtrl(EventReceiver):
@@ -32,11 +32,11 @@ class MenuScreenCtrl(EventReceiver):
 
                 elif self._mod.selection == MenuScreenModel.SOLO_CODE:
                     glvars.local_pl_code = 1
-                    self.pev(EngineEvTypes.PUSHSTATE, state_ident=GameStates.ClickChallg)
+                    self.pev(EngineEvTypes.PUSHSTATE, state_ident=GameStates.MultipGame)
 
                 elif self._mod.selection == MenuScreenModel.MULTI_CODE:
                     glvars.local_pl_code = 2
-                    self.pev(EngineEvTypes.PUSHSTATE, state_ident=GameStates.ClickChallg)
+                    self.pev(EngineEvTypes.PUSHSTATE, state_ident=GameStates.MultipGame)
 
         elif ev.type == EngineEvTypes.INGOINGNETW:
             print('*** debug netw ***')

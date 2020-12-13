@@ -5,15 +5,17 @@ from coremon_main.util import enum_starting_from_zero
 # gamestates
 GameStates = enum_starting_from_zero(
     'MenuScreen',
-    'ClickChallg'
+    'MultipGame'
 )
 
 
 # custom events
 MyEvTypes = enum_for_custom_event_types(
     'PlSelectsMode',  # contains info: ev.k
-    'PlayerMoved',  # used for sync as well! Contains: plcode, new_pos
-    'WorldChanges',
+
+    'GamestateServFeedback',  # used for sync client game state! Contains: plcode, new_pos
+    'PlayerMoves',  # updating only view from player moves! Contains: plcode, new_pos
+
     'ChallengeStarts',
 )
 CgmEvent.inject_custom_names(MyEvTypes)

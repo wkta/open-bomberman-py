@@ -2,8 +2,8 @@ import pygame
 
 import glvars
 import gui
-from bm_defs import MyEvTypes
 from coremon_main import EngineEvTypes, EventReceiver
+from defs_bombm import MyEvTypes
 
 
 class MenuScreenView(EventReceiver):

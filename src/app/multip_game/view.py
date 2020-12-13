@@ -1,12 +1,13 @@
 import pygame
 
-from bm_defs import MyEvTypes
 from coremon_main import EngineEvTypes, EventReceiver
+from defs_bombm import MyEvTypes
+from transversal.LocalWorld import LocalWorld
 
 
-class ClickChallgView(EventReceiver):
+class MultipGameView(EventReceiver):
 
-    def __init__(self, mod):
+    def __init__(self, mod: LocalWorld):
         super().__init__(self)
         self._bg_color = (66, 66, 66)  # red, green, blue format
         ft = pygame.font.Font(None, 19)
@@ -36,13 +37,14 @@ class ClickChallgView(EventReceiver):
                 for ppos in self._pl_positions:
                     pygame.draw.circle(ev.screen, (10, 88, 220), ppos, 32)
 
-        elif ev.type == MyEvTypes.WorldChanges:
+        elif ev.type == MyEvTypes.PlayerMoves:
+            print('view receives PlayerMoves evt')
             del self._pl_positions[:]
 
-            for c in ev.newstate.values():
-                self._pl_positions.append(
-                    ClickChallgView.game_to_scr_coords(*c)
-                )
+            for c in self._mod.irepr.state.values():
+                tmp = MultipGameView.game_to_scr_coords(*c)
+                print(tmp)
+                self._pl_positions.append(tmp)
 
     @staticmethod
     def game_to_scr_coords(i, j):

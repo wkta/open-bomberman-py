@@ -1,6 +1,5 @@
-import glvars
-from bm_defs import MyEvTypes
 from coremon_main import CogObject
+from defs_bombm import MyEvTypes
 from mirror.WorldModel import WorldModel
 
 
@@ -8,15 +7,19 @@ class LocalWorld(CogObject):
     """
     wrapper for WorldModel instance, with events enabled
     """
-    
+
     def __init__(self):
         super().__init__()
-        self.gameworld = WorldModel()
+        self.is_sync = False
+        self.irepr = WorldModel()
+
+    @property
+    def gridsize(self):
+        return WorldModel.GRID_SIZE
 
     def set_pos_from_netw(self, plcode, ij_pos):
-        self.gameworld.state[plcode] = ij_pos
-
-        self.pev(MyEvTypes.WorldChanges, newstate=self.gameworld.state)
+        self.irepr.state[plcode] = ij_pos
+        self.pev(MyEvTypes.PlayerMoves)
 
     # était utilisé avant websockets
     # def load_state(self, serial):
@@ -26,7 +29,3 @@ class LocalWorld(CogObject):
     #
     #     self.gameworld.load_state(serial)
     #     self.pev(MyEvTypes.WorldChanges, newstate=self.gameworld.state)
-
-    @property
-    def gridsize(self):
-        return WorldModel.GRID_SIZE

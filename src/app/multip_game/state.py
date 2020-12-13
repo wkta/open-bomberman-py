@@ -1,11 +1,11 @@
 import socketio_bridge
-from app.click_challg.ctrl import ClickChallgCtrl
-from app.click_challg.view import ClickChallgView
+from app.multip_game.ctrl import MultipGameCtrl
+from app.multip_game.view import MultipGameView
 from coremon_main import BaseGameState
 from transversal.LocalWorld import LocalWorld
 
 
-class ClickChallgState(BaseGameState):
+class MultipGameState(BaseGameState):
     def __init__(self, gs_id, name):
         super().__init__(gs_id, name)
         self.m = self.v = self.c = None
@@ -14,10 +14,10 @@ class ClickChallgState(BaseGameState):
         print('entering ClickChallg state...')
         self.m = LocalWorld()
 
-        self.v = ClickChallgView(self.m)
+        self.v = MultipGameView(self.m)
         self.v.turn_on()
 
-        self.c = ClickChallgCtrl(self.m)
+        self.c = MultipGameCtrl(self.m)
         self.c.turn_on()
         socketio_bridge.enable()
 
