@@ -1,9 +1,9 @@
 # from flask import Flask, render_template
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, join_room, leave_room
 import argparse
 import hashlib
 import json
-# from flask_socketio import send -> whats the diff between emit and send??
+from flask_socketio import send  # -> whats the diff between emit and send??
 from flask_socketio import emit
 from flask import Flask, jsonify
 
@@ -85,6 +85,22 @@ def maj_gamestate(plcode: int, direct: int):
         if gamestate[k][1] > BSUP:
             gamestate[k][1] = BSUP
 
+    for c in gamestate.keys():
+        i, j = gamestate[c]
+        emit('player_moved', {'code': c, 'newpos': [i, j]}, room='bomberman')
+
+
+@socketio.on('join')
+def on_join(data):
+    join_room('bomberman')
+    #send(username + ' has entered the room.', room=room)
+
+
+@socketio.on('leave')
+def on_leave(data):
+    leave_room('bomberman')
+    #send(username + ' has left the room.', room=room)
+
 
 @app.route('/move/<plcode>/<direct>')
 def move(plcode, direct):  # can use with direct==-1 to just query the position...
@@ -124,8 +140,6 @@ def handle_pushmove(givendata):
     margs = givendata['margs']
     plcode = int(margs[0])
     maj_gamestate(plcode, int(margs[1]))
-    i, j = gamestate[plcode]
-    emit('player_moved', {'code': plcode, 'newpos': [i, j]})
 
 
 # @socketio.on('move')

@@ -1,4 +1,5 @@
 import sys
+sys.path.append('../vendor')
 
 import coremon_main
 import glvars

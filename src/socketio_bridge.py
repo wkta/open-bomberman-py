@@ -69,6 +69,10 @@ def on_message(data):
     print('I received a message!')
 
 
+def joinroom():
+    sio.emit('join', {})
+
+
 if __name__ == '__main__':
     coremon_main.init_headless()
     # test serveur: on se connecte

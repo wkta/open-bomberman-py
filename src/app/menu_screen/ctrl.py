@@ -30,7 +30,12 @@ class MenuScreenCtrl(EventReceiver):
                 elif self._mod.selection == MenuScreenModel.NETWCONFIG_CODE:
                     self.pev(EngineEvTypes.OUTGOINGNETW, host=glvars.host, resource='/', num=666)
 
+                elif self._mod.selection == MenuScreenModel.SOLO_CODE:
+                    glvars.local_pl_code = 1
+                    self.pev(EngineEvTypes.PUSHSTATE, state_ident=GameStates.ClickChallg)
+
                 elif self._mod.selection == MenuScreenModel.MULTI_CODE:
+                    glvars.local_pl_code = 2
                     self.pev(EngineEvTypes.PUSHSTATE, state_ident=GameStates.ClickChallg)
 
         elif ev.type == EngineEvTypes.INGOINGNETW:

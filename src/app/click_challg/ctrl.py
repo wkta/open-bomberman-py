@@ -1,3 +1,4 @@
+import glvars
 from bm_defs import MyEvTypes
 from coremon_main import PygameBridge, EngineEvTypes, EventReceiver
 import socketio_bridge
@@ -16,11 +17,14 @@ class ClickChallgCtrl(EventReceiver):
         self._mod = mod
 
     def proc_event(self, ev, source=None):
-        dirty_local_pl_code = 1
+        dirty_local_pl_code = glvars.local_pl_code
 
         if ev.type == EngineEvTypes.LOGICUPDATE:
             if not self._is_sync:
-                socketio_bridge.push_movement(dirty_local_pl_code, -1)  # provoque refresh position
+                socketio_bridge.joinroom()
+
+                for pl in glvars.allplayers:
+                    socketio_bridge.push_movement(pl, -1)  # provoque refresh position
                 self._is_sync = True
 
             # -desactivé depuis quon utilise WS

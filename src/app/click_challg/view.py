@@ -38,6 +38,7 @@ class ClickChallgView(EventReceiver):
 
         elif ev.type == MyEvTypes.WorldChanges:
             del self._pl_positions[:]
+
             for c in ev.newstate.values():
                 self._pl_positions.append(
                     ClickChallgView.game_to_scr_coords(*c)
