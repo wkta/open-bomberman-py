@@ -1,6 +1,7 @@
 import socketio
 
 import coremon_main
+import glvars
 from bm_defs import MyEvTypes
 from coremon_main import EventManager, CgmEvent
 
@@ -13,7 +14,7 @@ else:
 
 # ------------------ handy actuators ------------------
 def enable():
-    sio.connect('http://localhost:8577')
+    sio.connect('http://{}:{}'.format(glvars.host, glvars.port))
 
 
 def disable():
