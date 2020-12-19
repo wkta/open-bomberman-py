@@ -2,7 +2,7 @@ import glvars
 import socketio_bridge
 from coremon_main import PygameBridge, EngineEvTypes, EventReceiver
 from defs_bombm import MyEvTypes
-from transversal.LocalWorld import LocalWorld
+from transversal.WorldSubject import WorldSubject
 
 
 code_do_synchro = 998767
@@ -10,7 +10,7 @@ code_do_synchro = 998767
 
 class MultipGameCtrl(EventReceiver):
 
-    def __init__(self, mod: LocalWorld):
+    def __init__(self, mod: WorldSubject):
         super().__init__()
 
         self._last_sync = None

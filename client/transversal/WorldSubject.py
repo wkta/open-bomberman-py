@@ -1,11 +1,12 @@
 from coremon_main import CogObject
 from defs_bombm import MyEvTypes
-from mirror.WorldModel import WorldModel
+from WorldModel import WorldModel
 
 
-class LocalWorld(CogObject):
+class WorldSubject(CogObject):
     """
-    wrapper for WorldModel instance, with events enabled
+    this class is a WRAPPER for one WorldModel instance,
+    it simply allows event posting so the WorldModel can be viewed on screen
     """
 
     def __init__(self):

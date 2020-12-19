@@ -2,7 +2,7 @@ import socketio_bridge
 from app.multip_game.ctrl import MultipGameCtrl
 from app.multip_game.view import MultipGameView
 from coremon_main import BaseGameState
-from transversal.LocalWorld import LocalWorld
+from transversal.WorldSubject import WorldSubject
 
 
 class MultipGameState(BaseGameState):
@@ -12,7 +12,7 @@ class MultipGameState(BaseGameState):
 
     def enter(self):
         print('entering ClickChallg state...')
-        self.m = LocalWorld()
+        self.m = WorldSubject()
 
         self.v = MultipGameView(self.m)
         self.v.turn_on()

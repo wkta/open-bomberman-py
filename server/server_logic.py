@@ -1,7 +1,7 @@
 import json
 import random
 
-from mirror.WorldModel import WorldModel
+from WorldModel import WorldModel
 
 prev_names = dict()
 pl_to_room = dict()
