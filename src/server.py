@@ -1,11 +1,11 @@
-# from flask import Flask, render_template
-from flask_socketio import SocketIO, join_room, leave_room
 import argparse
 import hashlib
-import json
-from flask_socketio import send  # -> whats the diff between emit and send??
+
+from flask import Flask, jsonify, request
+from flask_socketio import SocketIO, join_room, leave_room
 from flask_socketio import emit
-from flask import Flask, jsonify
+
+import server_logic
 
 
 # app = Flask(__name__)
@@ -42,17 +42,9 @@ BSUP = 8
 gs_init = False
 
 
-def loadstate():
-    global gamestate, gs_init
-    with open('gamestate.json', 'r') as fptr:
-        obj = json.load(fptr)
-
-    gamestate.clear()
-    for k, v in obj.items():
-        gamestate[int(k)] = v
-    gs_init = True
-
-
+# /////////////////////////////////////
+#  classic routes
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 @app.route('/')
 def index():
     global cpt
@@ -60,54 +52,12 @@ def index():
     return "hello there, req #{}".format(cpt)
 
 
-def maj_gamestate(plcode: int, direct: int):
-    print(' SERV: maj gamestate')
-    global gamestate
-    k = int(plcode)
-    d = int(direct)
-    if d == 0:
-        gamestate[k][0] += 1
-        if gamestate[k][0] > BSUP:
-            gamestate[k][0] = BSUP
-
-    elif d == 1:
-        gamestate[k][1] -= 1
-        if gamestate[k][1] < 0:
-            gamestate[k][1] = 0
-
-    elif d == 2:
-        gamestate[k][0] -= 1
-        if gamestate[k][0] < 0:
-            gamestate[k][0] = 0
-
-    elif d == 3:
-        gamestate[k][1] += 1
-        if gamestate[k][1] > BSUP:
-            gamestate[k][1] = BSUP
-
-    for c in gamestate.keys():
-        i, j = gamestate[c]
-        emit('player_moved', {'code': c, 'newpos': [i, j]}, room='bomberman')
-
-
-@socketio.on('join')
-def on_join(data):
-    join_room('bomberman')
-    #send(username + ' has entered the room.', room=room)
-
-
-@socketio.on('leave')
-def on_leave(data):
-    leave_room('bomberman')
-    #send(username + ' has left the room.', room=room)
-
-
 @app.route('/move/<plcode>/<direct>')
 def move(plcode, direct):  # can use with direct==-1 to just query the position...
     global gs_init, gamestate, BSUP
     if not gs_init:
-        loadstate()
-    maj_gamestate(int(plcode), int(direct))
+        gs_init = server_logic.loadstate(gamestate)
+    server_logic.maj_gamestate(gamestate, int(plcode), int(direct))
     return jsonify(gamestate[int(plcode)])
 
 
@@ -115,7 +65,7 @@ def move(plcode, direct):  # can use with direct==-1 to just query the position.
 def statesig():
     global gs_init, gamestate
     if not gs_init:
-        loadstate()
+        gs_init = server_logic.loadstate(gamestate)
 
     m = hashlib.sha224()
     clients = list(gamestate.keys())
@@ -130,16 +80,27 @@ def save():
     pass
 
 
+# /////////////////////////////////////
+#  websockets interface
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 @socketio.on('pushmove')
-def handle_pushmove(givendata):
+def handle_pushmove(margs):
     global gs_init, gamestate
     print('received pushmove')
-    if not gs_init:
-        loadstate()
 
-    margs = givendata['margs']
-    plcode = int(margs[0])
-    maj_gamestate(plcode, int(margs[1]))
+    #if not gs_init:
+    #    gs_init = server_logic.loadstate(gamestate)
+
+    uname = margs[0]
+    direction = margs[1]
+
+    room_name = server_logic.fetch_room(uname)
+    plcode = server_logic.user_to_code(uname)
+
+    server_logic.maj_gamestate(gamestate, plcode, int(direction))
+    for c in gamestate.keys():
+        i, j = gamestate[c]
+        emit('player_moved', {'code': c, 'newpos': [i, j]}, room=room_name)
 
 
 # @socketio.on('move')
@@ -149,7 +110,8 @@ def handle_pushmove(givendata):
 
 @socketio.on('connect')
 def test_connect():
-    emit('serv response', {'data': 'Connected'})
+    print(request.sid)
+    emit('connection_ok', server_logic.gen_username())
     # time.sleep(5)
     # emit('death', {'data': None})
 
@@ -159,10 +121,31 @@ def test_disconnect():
     print('Client disconnected')
 
 
-tmp = _parser.parse_args()
-print(tmp.host)
-print(tmp.port)
+@socketio.on('join')
+def on_join(data):
+    global gamestate
+
+    rname = 'bomberman#{}'.format(data['room_num'])
+    join_room(rname)
+    server_logic.save_room(data['username'], rname)
+
+    uname = data['username']
+    plcode = server_logic.user_to_code(uname)
+    gamestate[plcode] = [0, 1]
+
+    print('{} has entered {}'.format(uname, rname))
+    emit('notify_others', {'newplayer': uname}, room=rname)
+
+
+@socketio.on('leave')
+def on_leave(data):
+    rname = 'bomberman#{}'.format(data['room_num'])
+    leave_room(rname)
+    server_logic.save_room(data['username'], None)
+
+    print('{} has left {}'.format(data['username'], rname))
+
 
 if __name__ == '__main__':
-    socketio.run(app, port=int(tmp.port))  # , host=tmp.host, port=tmp.port)
-    # app.run(host=tmp.host, port=tmp.port)
+    tmp = _parser.parse_args()
+    socketio.run(app, port=int(tmp.port))

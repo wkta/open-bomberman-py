@@ -11,6 +11,11 @@ GameStates = enum_starting_from_zero(
 
 # custom events
 MyEvTypes = enum_for_custom_event_types(
+    'ServerLoginOk',  # contains username
+    'OtherGuyCame',  # contains username
+
+    'ServerStartingMatch',  # the server automatically starts a new match after 10sec
+
     'PlSelectsMode',  # contains info: ev.k
 
     'GamestateServFeedback',  # used for sync client game state! Contains: plcode, new_pos

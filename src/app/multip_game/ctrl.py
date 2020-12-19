@@ -14,48 +14,62 @@ class MultipGameCtrl(EventReceiver):
         super().__init__()
 
         self._last_sync = None
+        self.room_joined = False
         self._mod = mod
 
+    def force_gs_sync(self):
+        print('forcing sync...')
+        for pl in glvars.allplayers:
+            socketio_bridge.push_movement(pl, -1)  # provoque refresh position
+
     def proc_event(self, ev, source=None):
-        dirty_local_pl_code = glvars.local_pl_code
 
-        if ev.type == EngineEvTypes.LOGICUPDATE:
-            if not self._mod.is_sync:
-                socketio_bridge.joinroom()
+        # -desactivé depuis quon utilise WS
+        # if self._last_sync is None:
+        #     self.pev(EngineEvTypes.OUTGOINGNETW, host=glvars.host, resource='/move/1/-1', num=code_do_synchro)
+        #     self._last_sync = time.time()
+        #
+        # else:
+        #     tnow = time.time()
+        #     dt = tnow - self._last_sync
+        #     if dt > 5.0:  # polling, freq 5sec
+        #         self.pev(EngineEvTypes.OUTGOINGNETW, host=glvars.host, resource='/move/1/-1', num=code_do_synchro)
+        #         self._last_sync = tnow
 
-                for pl in self._mod.irepr.list_players():
-                    socketio_bridge.push_movement(pl, -1)  # provoque refresh position
+        if ev.type == MyEvTypes.ServerLoginOk:
+            print('server login OK')
+            print(ev.username)
+            glvars.local_pl_code = ev.username
+            glvars.allplayers.add(ev.username)
+            socketio_bridge.joinroom(glvars.local_pl_code, 1)
+            self.force_gs_sync()
 
-                self._mod.is_sync = True
+        elif ev.type == MyEvTypes.OtherGuyCame:
+            glvars.allplayers.add(ev.username)
+            self.force_gs_sync()
 
-            # -desactivé depuis quon utilise WS
-            # if self._last_sync is None:
-            #     self.pev(EngineEvTypes.OUTGOINGNETW, host=glvars.host, resource='/move/1/-1', num=code_do_synchro)
-            #     self._last_sync = time.time()
-            #
-            # else:
-            #     tnow = time.time()
-            #     dt = tnow - self._last_sync
-            #     if dt > 5.0:  # polling, freq 5sec
-            #         self.pev(EngineEvTypes.OUTGOINGNETW, host=glvars.host, resource='/move/1/-1', num=code_do_synchro)
-            #         self._last_sync = tnow
+        elif ev.type == MyEvTypes.ServerStartingMatch:
+            pass
 
         elif ev.type == MyEvTypes.GamestateServFeedback:
             print('MultipGame controler has detected a GamestateServFeedback evt')
             self._mod.set_pos_from_netw(ev.plcode, ev.new_pos)
 
         elif ev.type == PygameBridge.KEYDOWN:
-            if ev.key == PygameBridge.K_ESCAPE:
-                self.pev(EngineEvTypes.POPSTATE)
+            self._process_keypress(ev)
 
-            elif ev.key == PygameBridge.K_RIGHT:
-                MultipGameCtrl.mvt_serv_side(dirty_local_pl_code, 0)
-            elif ev.key == PygameBridge.K_UP:
-                MultipGameCtrl.mvt_serv_side(dirty_local_pl_code, 1)
-            elif ev.key == PygameBridge.K_LEFT:
-                MultipGameCtrl.mvt_serv_side(dirty_local_pl_code, 2)
-            elif ev.key == PygameBridge.K_DOWN:
-                MultipGameCtrl.mvt_serv_side(dirty_local_pl_code, 3)
+    def _process_keypress(self, ev):
+        if ev.key == PygameBridge.K_ESCAPE:
+            self.pev(EngineEvTypes.POPSTATE)
+
+        elif ev.key == PygameBridge.K_RIGHT:
+            MultipGameCtrl.mvt_serv_side(glvars.local_pl_code, 0)
+        elif ev.key == PygameBridge.K_UP:
+            MultipGameCtrl.mvt_serv_side(glvars.local_pl_code, 1)
+        elif ev.key == PygameBridge.K_LEFT:
+            MultipGameCtrl.mvt_serv_side(glvars.local_pl_code, 2)
+        elif ev.key == PygameBridge.K_DOWN:
+            MultipGameCtrl.mvt_serv_side(glvars.local_pl_code, 3)
 
     @staticmethod
     def mvt_serv_side(local_plcode, direct):

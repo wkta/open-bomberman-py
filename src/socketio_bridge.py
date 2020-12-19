@@ -22,10 +22,9 @@ def disable():
     sio.disconnect()
 
 
-def push_movement(plcode, direct):
-    margs = [plcode, direct]
-    print('** pushing mvt to server using ws | margs will be: {}, {}**'.format(1, direct))
-    sio.emit('pushmove', {'margs': margs})
+def push_movement(username, direct):
+    print('** pushing mvt to server using ws | arg will be: {} **'.format([username, direct] ))
+    sio.emit('pushmove', [username, direct])
     # triggers the server to send player_moved
 
 
@@ -62,9 +61,19 @@ def death(data):
     print('received a death message!')
 
 
-@sio.on('serv response')
-def serv_response(data):
-    print(' >> server >> {}'.format(data))
+@sio.on('connection_ok')
+def serv_response(username):
+    print('connection_ok, username= {}'.format(username))
+    EventManager.instance().post(CgmEvent(MyEvTypes.ServerLoginOk, username=username))
+
+
+@sio.on('notify_others')
+def notify_others(data):
+    print('local client knows that plyer {} entered current room'.format(data['newplayer']))
+    EventManager.instance().post(
+        CgmEvent(MyEvTypes.OtherGuyCame, username=data['newplayer'])
+    )
+
 
 
 @sio.on('my message')
@@ -72,8 +81,8 @@ def on_message(data):
     print('I received a message!')
 
 
-def joinroom():
-    sio.emit('join', {})
+def joinroom(user, num):
+    sio.emit('join', {'username': user, 'room_num': int(num)})
 
 
 if __name__ == '__main__':
