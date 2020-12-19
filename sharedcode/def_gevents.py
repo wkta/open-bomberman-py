@@ -1,17 +1,10 @@
 from coremon_main import enum_for_custom_event_types, CgmEvent
-from coremon_main.util import enum_starting_from_zero
 
 
-# gamestates
-GameStates = enum_starting_from_zero(
-    'MenuScreen',
-    'MultipGame'
-)
+SERV_COMM_KEY = 'coremon_evt_name'
 
 
-# custom events
 MyEvTypes = enum_for_custom_event_types(
-    'ServerLoginOk',  # contains username
     'OtherGuyCame',  # contains username
 
     'ServerStartingMatch',  # the server automatically starts a new match after 10sec
@@ -20,6 +13,10 @@ MyEvTypes = enum_for_custom_event_types(
 
     'GamestateServFeedback',  # used for sync client game state! Contains: plcode, new_pos
     'PlayerMoves',  # updating only view from player moves! Contains: plcode, new_pos
+
+    # - network-related
+    'ConnectionOk',  # contains playercode:int
+    'PlayerMovement',  # contains plcode:int, new_pos:list
 
     'ChallengeStarts',
 )

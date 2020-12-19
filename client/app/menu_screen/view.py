@@ -3,7 +3,7 @@ import pygame
 import glvars
 import gui
 from coremon_main import EngineEvTypes, EventReceiver
-from defs_bombm import MyEvTypes
+from def_gevents import MyEvTypes
 
 
 class MenuScreenView(EventReceiver):

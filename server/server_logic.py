@@ -3,7 +3,7 @@ import random
 
 from WorldModel import WorldModel
 
-prev_names = dict()
+prev_plcodes = dict()
 pl_to_room = dict()
 
 
@@ -26,13 +26,11 @@ def fetch_room(plname):
 
 
 def gen_username():
-    global prev_names
+    global prev_plcodes
     num = random.randint(998, 2866791137)
-    res = 'player' + hex(num)
-    while res in prev_names:
-        num = random.randint(1000, 289137)
-        res = 'player' + hex(num)
-    return res
+    while num in prev_plcodes:
+        num = random.randint(998, 2866791137)
+    return num
 
 
 def loadstate(gmstate):

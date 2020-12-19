@@ -1,13 +1,13 @@
 import socketio
 
+import basiques
 import coremon_main
 import glvars
 from coremon_main import EventManager, CgmEvent
-from defs_bombm import MyEvTypes
+from def_gevents import MyEvTypes, SERV_COMM_KEY
 
 
-NEED_DEBUG = False
-if NEED_DEBUG:
+if glvars.NEED_NETW_DEBUG:
     sio = socketio.Client(logger=True, engineio_logger=True)
 else:
     sio = socketio.Client()
@@ -15,16 +15,22 @@ else:
 
 # ------------------ handy actuators ------------------
 def enable():
-    sio.connect('http://{}:{}'.format(glvars.host, glvars.port))
+    sio.connect('http://{}:{}'.format(glvars.host, glvars.port))  # => serv_welcome, serv_allrooms
 
 
 def disable():
     sio.disconnect()
 
 
-def push_movement(username, direct):
-    print('** pushing mvt to server using ws | arg will be: {} **'.format([username, direct] ))
-    sio.emit('pushmove', [username, direct])
+def join_room(user, num):
+    sio.emit('join', {'username': user, 'room_num': int(num)})  # => serv_countdown_reset, serv_gamestarts
+
+
+def push_action(act_obj):
+    print('** pushing action to server using ws: act_obj= {}'.format(act_obj))
+    serial = act_obj.serialize()
+    print('serial= '+serial)
+    sio.emit('push_action', serial)
     # triggers the server to send player_moved
 
 
@@ -46,43 +52,33 @@ def disconnect():
 
 
 # ------------------ remote events(specific) ------------------
-@sio.on('player_moved')
-def handle_player_moved(data):
-    # retrieves the new player pos
-    code = int(data['code'])
-    newpos = data['newpos']
-    print('**receiving feedback from server: code= {}, newpos={} **'.format(code, newpos))
-
-    EventManager.instance().post(CgmEvent(MyEvTypes.GamestateServFeedback, plcode=code, new_pos=newpos))
-
-
 @sio.event
-def death(data):
-    print('received a death message!')
+def server_notification(data):
+    """
+    generic socketio event, using this event we wrap then unwrap
+    coremon_engine custom game events.
+
+    This procedure ALWAYS posts a CgmEvent object using the EventManager
+    """
+
+    # unpack custom game event name
+    lowercase_style_evtname = data[SERV_COMM_KEY]
+    del data[SERV_COMM_KEY]
+    cc_style_evtname = basiques.to_camel_case(lowercase_style_evtname)
+
+    adhoc_expr = 'CgmEvent(MyEvTypes.{}, **data)'.format(cc_style_evtname)
+    evt = eval(adhoc_expr)
+    EventManager.instance().post(evt)
 
 
-@sio.on('connection_ok')
-def serv_response(username):
-    print('connection_ok, username= {}'.format(username))
-    EventManager.instance().post(CgmEvent(MyEvTypes.ServerLoginOk, username=username))
-
-
-@sio.on('notify_others')
-def notify_others(data):
-    print('local client knows that plyer {} entered current room'.format(data['newplayer']))
-    EventManager.instance().post(
-        CgmEvent(MyEvTypes.OtherGuyCame, username=data['newplayer'])
-    )
-
+# @sio.event
+# def death(data):
+#     print('received a death message!')
 
 
 @sio.on('my message')
 def on_message(data):
     print('I received a message!')
-
-
-def joinroom(user, num):
-    sio.emit('join', {'username': user, 'room_num': int(num)})
 
 
 if __name__ == '__main__':

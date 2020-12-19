@@ -1,6 +1,7 @@
 
 # - constants
 DEV_MODE = True
+NEED_NETW_DEBUG = False
 
 SCR_SIZE = (800, 600)
 GAME_TITLE = 'Open Bomberman Py'

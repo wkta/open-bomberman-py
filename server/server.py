@@ -4,9 +4,9 @@ import hashlib
 from flask import Flask, jsonify, request
 from flask_socketio import SocketIO, join_room, leave_room
 from flask_socketio import emit
-
 import server_logic
-
+from PlayerAction import PlayerAction
+from def_gevents import SERV_COMM_KEY
 
 # app = Flask(__name__)
 # app.config['SECRET_KEY'] = 'vnkdjnfjknfl1232#'
@@ -40,6 +40,20 @@ cpt = 0
 gamestate = dict()
 BSUP = 8
 gs_init = False
+
+
+def notify(roomname, event_name, coremon_kwargs):
+    """
+    generic procedure sending things to connected game clients...
+    """
+    # TODO test si le event_name matche effectivement un game event déclaré
+    pass
+
+    coremon_kwargs[SERV_COMM_KEY] = event_name
+    if roomname:
+        emit('server_notification', coremon_kwargs, room=roomname)
+    else:
+        emit('server_notification', coremon_kwargs)
 
 
 # /////////////////////////////////////
@@ -83,37 +97,34 @@ def save():
 # /////////////////////////////////////
 #  websockets interface
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-@socketio.on('pushmove')
-def handle_pushmove(margs):
-    global gs_init, gamestate
-    print('received pushmove')
+@socketio.on('push_action')
+def handle_push_action(act_serial):
+    global gamestate
 
-    #if not gs_init:
-    #    gs_init = server_logic.loadstate(gamestate)
+    act_obj = PlayerAction.deserialize(act_serial)
 
-    uname = margs[0]
-    direction = margs[1]
+    print('received server side {} '.format(act_obj))
+    # uname = margs[0]
+    # direction = margs[1]
 
-    room_name = server_logic.fetch_room(uname)
-    plcode = server_logic.user_to_code(uname)
+    room_name = server_logic.fetch_room(act_obj.actor_id)
+    plcode = act_obj.actor_id
 
-    server_logic.maj_gamestate(gamestate, plcode, int(direction))
-    for c in gamestate.keys():
-        i, j = gamestate[c]
-        emit('player_moved', {'code': c, 'newpos': [i, j]}, room=room_name)
+    if act_obj.action_t == PlayerAction.T_MOVEMENT:
+        server_logic.maj_gamestate(gamestate, plcode, int(act_obj.direction))
+        for c in gamestate.keys():
+            i, j = gamestate[c]
+            print('emit msg')
 
-
-# @socketio.on('move')
-# def move(data):
-#     emit('death', {'data': ''})
+            kwargs = {'plcode': c, 'new_pos': [i, j]}
+            notify(room_name, 'player_movement', kwargs)
+            emit('player_movement', kwargs, room=room_name)
 
 
 @socketio.on('connect')
 def test_connect():
-    print(request.sid)
-    emit('connection_ok', server_logic.gen_username())
-    # time.sleep(5)
-    # emit('death', {'data': None})
+    kwargs = {'playercode': server_logic.gen_username()}
+    notify(None, 'connection_ok', kwargs)
 
 
 @socketio.on('disconnect')
@@ -129,12 +140,11 @@ def on_join(data):
     join_room(rname)
     server_logic.save_room(data['username'], rname)
 
-    uname = data['username']
-    plcode = server_logic.user_to_code(uname)
+    plcode = data['username']
     gamestate[plcode] = [0, 1]
 
-    print('{} has entered {}'.format(uname, rname))
-    emit('notify_others', {'newplayer': uname}, room=rname)
+    print('{} has entered {}'.format(plcode, rname))
+    notify(rname, 'other_guy_came', {'username': plcode})
 
 
 @socketio.on('leave')

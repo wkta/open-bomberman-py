@@ -1,7 +1,7 @@
 import glvars
 from app.menu_screen.model import MenuScreenModel
 from coremon_main import PygameBridge, EngineEvTypes, EventReceiver
-from defs_bombm import GameStates
+from def_gamestates import GameStates
 
 
 class MenuScreenCtrl(EventReceiver):

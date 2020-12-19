@@ -1,4 +1,4 @@
-from defs_bombm import MyEvTypes
+from def_gevents import MyEvTypes
 from coremon_main import CogObject
 
 

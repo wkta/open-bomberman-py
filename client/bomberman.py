@@ -3,7 +3,7 @@ sys.path.append('../vendor')
 
 import coremon_main
 import glvars
-from defs_bombm import GameStates
+from def_gamestates import GameStates
 from coremon_main.runners import StackBasedGameCtrl
 from coremon_netw.NetwMsgCtrl import NetwMsgCtrl
 from glvars import SCR_SIZE, GAME_TITLE

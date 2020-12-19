@@ -1,13 +1,13 @@
 import pygame
 
 from coremon_main import EngineEvTypes, EventReceiver
-from defs_bombm import MyEvTypes
-from transversal.WorldSubject import WorldSubject
+from def_gevents import MyEvTypes
+from transversal.WorldSubjectMod import WorldSubjectMod
 
 
 class MultipGameView(EventReceiver):
 
-    def __init__(self, mod: WorldSubject):
+    def __init__(self, mod: WorldSubjectMod):
         super().__init__(self)
         self._bg_color = (66, 66, 66)  # red, green, blue format
         ft = pygame.font.Font(None, 19)

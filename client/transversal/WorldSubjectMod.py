@@ -1,9 +1,9 @@
 from coremon_main import CogObject
-from defs_bombm import MyEvTypes
+from def_gevents import MyEvTypes
 from WorldModel import WorldModel
 
 
-class WorldSubject(CogObject):
+class WorldSubjectMod(CogObject):
     """
     this class is a WRAPPER for one WorldModel instance,
     it simply allows event posting so the WorldModel can be viewed on screen
