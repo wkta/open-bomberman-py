@@ -14,7 +14,9 @@ class MultipGameView(EventReceiver):
         self.img = ft.render('Inside the game', True, (0, 0, 0))
         self.img_pos = (200, 60)
         self._mod = mod
-        self._pl_positions = []
+
+        self._pl_positions = list()
+        self._bomb_positions = list()
 
     # override
     def proc_event(self, ev, source=None):
@@ -33,9 +35,17 @@ class MultipGameView(EventReceiver):
                 tmp = ay+j*offsetpx
                 pygame.draw.line(ev.screen, (15, 192, 50), (ax, tmp), (ax+lim*offsetpx, tmp))
 
-            if len(self._pl_positions):
-                for ppos in self._pl_positions:
-                    pygame.draw.circle(ev.screen, (10, 88, 220), ppos, 32)
+            # entities
+            for ppos in self._pl_positions:
+                pygame.draw.circle(ev.screen, (10, 88, 220), ppos, 32, 0)
+            for ppos in self._bomb_positions:
+                pygame.draw.rect(ev.screen, (220, 11, 75), (ppos[0]-16, ppos[1]-16, 32, 32), 0)
+
+        elif ev.type == MyEvTypes.BombsetChanges:
+            del self._bomb_positions[:]
+            for pos in ev.info:
+                tmp = MultipGameView.game_to_scr_coords(*pos)
+                self._bomb_positions.append(tmp)
 
         elif ev.type == MyEvTypes.PlayerMoves:
             print('view receives PlayerMoves evt')
@@ -43,7 +53,6 @@ class MultipGameView(EventReceiver):
 
             for c in self._mod.irepr.state.values():
                 tmp = MultipGameView.game_to_scr_coords(*c)
-                print(tmp)
                 self._pl_positions.append(tmp)
 
     @staticmethod

@@ -3,8 +3,23 @@ import random
 
 from WorldModel import WorldModel
 
+
+# - const
+BOMB_DELAY = 2.97  # sec
+BSUP = 8
+
+
+# - variables
 prev_plcodes = dict()
 pl_to_room = dict()
+bombs = dict()  # assoc position time it was planted
+gamestate = dict()
+force_quit = False
+
+
+def spawn_player(plcode):
+    global gamestate
+    gamestate[plcode] = [0, 1]
 
 
 def user_to_code(uname):
@@ -17,6 +32,11 @@ def save_room(plname, room):
         del pl_to_room[plname]
     else:
         pl_to_room[plname] = room
+
+
+def locate_player(plcode):
+    global gamestate
+    return gamestate[plcode]
 
 
 def fetch_room(plname):
@@ -33,7 +53,9 @@ def gen_username():
     return num
 
 
-def loadstate(gmstate):
+def loadstate():
+    global gamestate
+    gmstate = gamestate
     with open('gamestate.json', 'r') as fptr:
         obj = json.load(fptr)
 
@@ -43,7 +65,9 @@ def loadstate(gmstate):
         return True
 
 
-def maj_gamestate(gamestate, plcode: int, direct: int):
+def maj_gamestate(plcode: int, direct: int):
+    global gamestate
+
     print(' SERV: maj gamestate')
     k = int(plcode)
     d = int(direct)

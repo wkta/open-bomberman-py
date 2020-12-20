@@ -38,6 +38,11 @@ class PacketRecvCtrl(EventReceiver):
         elif ev.type == MyEvTypes.ServerStartingMatch:
             pass
 
+        elif ev.type == MyEvTypes.BombCreation:
+            self._mod.add_bomb(ev.x, ev.y)
+
+        elif ev.type == MyEvTypes.BombExplosion:
+            self._mod.remove_bomb(ev.x, ev.y)
+
         elif ev.type == MyEvTypes.PlayerMovement:  # MyEvTypes.GamestateServFeedback:
-            print('[][] ' + str(ev))
             self._mod.set_pos_from_netw(ev.plcode, ev.new_pos)

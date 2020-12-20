@@ -22,6 +22,17 @@ class WorldSubjectMod(CogObject):
         self.irepr.state[plcode] = ij_pos
         self.pev(MyEvTypes.PlayerMoves)
 
+    # - redefining...
+    def add_bomb(self, x, y):
+        print('subject model: bomb added')
+        self.irepr.add_bomb(x, y)
+        self.pev(MyEvTypes.BombsetChanges, info=self.irepr.bombs)
+
+    def remove_bomb(self, x, y):
+        print('subject model: bomb removed')
+        self.irepr.remove_bomb(x, y)
+        self.pev(MyEvTypes.BombsetChanges, info=self.irepr.bombs)
+
     # était utilisé avant websockets
     # def load_state(self, serial):
     #     if glvars.DEV_MODE:

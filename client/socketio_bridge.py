@@ -68,6 +68,7 @@ def server_notification(data):
 
     adhoc_expr = 'CgmEvent(MyEvTypes.{}, **data)'.format(cc_style_evtname)
     evt = eval(adhoc_expr)
+    print('   [NETW] >>> {}'.format(evt))
     EventManager.instance().post(evt)
 
 

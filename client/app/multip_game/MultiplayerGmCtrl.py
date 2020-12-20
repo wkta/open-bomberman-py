@@ -15,17 +15,17 @@ class MultiplayerGmCtrl(EventReceiver):
             self._process_keypress(ev)
 
     def _process_keypress(self, ev):
-        default_action = PlayerAction.T_MOVEMENT
-        direct = None
 
         if ev.key == PygameBridge.K_ESCAPE:
             self.pev(EngineEvTypes.POPSTATE)
             return
 
         if ev.key == PygameBridge.K_SPACE:
-            pass
+            act = PlayerAction(glvars.local_pl_code, PlayerAction.T_BOMB)
+            socketio_bridge.push_action(act)
             return
 
+        direct = None
         if ev.key == PygameBridge.K_RIGHT:
             direct = 0
         elif ev.key == PygameBridge.K_UP:
@@ -36,5 +36,5 @@ class MultiplayerGmCtrl(EventReceiver):
             direct = 3
 
         if direct is not None:
-            act = PlayerAction(glvars.local_pl_code, default_action, direction=direct)
+            act = PlayerAction(glvars.local_pl_code, PlayerAction.T_MOVEMENT, direction=direct)
             socketio_bridge.push_action(act)
