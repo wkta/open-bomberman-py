@@ -26,12 +26,12 @@ class WorldSubjectMod(CogObject):
     def add_bomb(self, x, y):
         print('subject model: bomb added')
         self.irepr.add_bomb(x, y)
-        self.pev(MyEvTypes.BombsetChanges, info=self.irepr.list_bombs())
+        self.pev(MyEvTypes.BombsetChanges, info=self.irepr.bomb_locations())
 
     def remove_bomb(self, x, y):
         print('subject model: bomb removed')
         self.irepr.remove_bomb(x, y)
-        self.pev(MyEvTypes.BombsetChanges, info=self.irepr.list_bombs())
+        self.pev(MyEvTypes.BombsetChanges, info=self.irepr.bomb_locations())
 
     # était utilisé avant websockets
     # def load_state(self, serial):

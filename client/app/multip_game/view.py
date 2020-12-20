@@ -17,29 +17,49 @@ class MultipGameView(EventReceiver):
 
         self._pl_positions = list()
         self._bomb_positions = list()
+        self._wall_positions = list()
+
+        for wpos in self._mod.irepr.wall_locations():
+            tmp_coords = MultipGameView.game_to_scr_coords(wpos[0], wpos[1])
+            self._wall_positions.append(tmp_coords)
+
+    def _draw_game_entities(self, scr):
+        # - DRAW ALL entities
+        bluecol = (10, 88, 220)
+        redcolor = (220, 11, 75)
+        graycolor = (196, 196, 196)
+
+        # draw walls
+        for ppos in self._wall_positions:
+            pygame.draw.rect(scr, bluecol, (ppos[0] - 30, ppos[1] - 30, 60, 60), 0)
+
+        # draw players
+        for ppos in self._pl_positions:
+            pygame.draw.circle(scr, redcolor, ppos, 32, 0)
+
+        # draw bombs
+        for ppos in self._bomb_positions:
+            pygame.draw.circle(scr, graycolor, ppos, 24, 0)
 
     # override
     def proc_event(self, ev, source=None):
+
         if ev.type == EngineEvTypes.PAINT:
             ev.screen.fill(self._bg_color)
-            ev.screen.blit(self.img, self.img_pos)
+            # ev.screen.blit(self.img, self.img_pos)
 
-            # grid
+            # draw grid
             ax, ay = 15, 15
             offsetpx = 64
             lim = self._mod.gridsize
-            for i in range(lim+1):
-                tmp = ax+i*offsetpx
-                pygame.draw.line(ev.screen, (15, 192, 50), (tmp, ay), (tmp, ay+lim*offsetpx))
-            for j in range(lim+1):
-                tmp = ay+j*offsetpx
-                pygame.draw.line(ev.screen, (15, 192, 50), (ax, tmp), (ax+lim*offsetpx, tmp))
+            for i in range(lim + 1):
+                tmp = ax + i * offsetpx
+                pygame.draw.line(ev.screen, (15, 192, 50), (tmp, ay), (tmp, ay + lim * offsetpx))
+            for j in range(lim + 1):
+                tmp = ay + j * offsetpx
+                pygame.draw.line(ev.screen, (15, 192, 50), (ax, tmp), (ax + lim * offsetpx, tmp))
 
-            # entities
-            for ppos in self._pl_positions:
-                pygame.draw.circle(ev.screen, (10, 88, 220), ppos, 32, 0)
-            for ppos in self._bomb_positions:
-                pygame.draw.rect(ev.screen, (220, 11, 75), (ppos[0]-16, ppos[1]-16, 32, 32), 0)
+            self._draw_game_entities(ev.screen)
 
         elif ev.type == MyEvTypes.BombsetChanges:
             del self._bomb_positions[:]

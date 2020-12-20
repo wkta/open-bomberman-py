@@ -11,7 +11,7 @@ class WorldModel:
         -> who dies when a bomb explodes?
     """
 
-    BOMB_DELAY = 2.97  # sec
+    BOMB_DELAY = 3.8666  # sec
     GRID_SIZE = 9
     NB_PLAYERS = 2
     ETYPE_WALL, ETYPE_BOMB = range(189237, 189237+2)
@@ -20,19 +20,35 @@ class WorldModel:
         super().__init__()
 
         # we set value to True when the spawn pos has been used
+        mxcoord = self.GRID_SIZE-1
         self._spawn_positions = {
-            (0, 0): False,
-            (8, 8): False,
-            (0, 8): False,
-            (8, 0): False
+            (0,       0):       False,
+            (mxcoord, mxcoord): False,
+            (0,       mxcoord): False,
+            (mxcoord, 0):       False
         }
 
         # todo extend the gamestate
         # instead of having plcode <> pos we should use pos <> entitytype (-> storing walls, bombs, bonuses)
         # +lets use another variable for player positions, bc players can overlap
         self._grid_state = dict()
+        self._init_level()
+
         self._pl_positions = dict()
         self._bomb_infos = dict()  # assoc position(int,int) <> date when planted(float)
+
+    def _init_level(self):
+        all_wpos = [
+            (1, 1),
+            (2, 1),
+            (3, 1),
+
+            (7, 7),
+            (6, 7),
+            (5, 7)
+        ]
+        for wpos in all_wpos:
+            self._grid_state[wpos] = self.ETYPE_WALL
 
     def list_players(self):
         """
@@ -61,8 +77,16 @@ class WorldModel:
         self._grid_state[(x, y)] = None
         del self._bomb_infos[(x, y)]
 
-    def list_bombs(self):
+    def bomb_locations(self):
         return list(self._bomb_infos.keys())
+
+    def wall_locations(self):
+        tmp = list()
+        for i in range(self.GRID_SIZE):
+            for j in range(self.GRID_SIZE):
+                if ((i, j) in self._grid_state) and self.ETYPE_WALL == self._grid_state[(i, j)]:
+                    tmp.append((i, j))
+        return tmp
 
     def get_bomb_infos(self):
         return dict(self._bomb_infos)
@@ -84,7 +108,8 @@ class WorldModel:
     def player_location(self, plcode):
         return list(self._pl_positions[plcode])
 
-    def serialize(self):  # players pos are NOT meant to be serialized /!\
+    def serialize(self):
+        # NEITHER players pos, NOR timeinfo on bombs areserialized/!\
         return json.dumps(self._grid_state)
 
     # -----------------------
