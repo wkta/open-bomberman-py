@@ -19,19 +19,19 @@ class WorldSubjectMod(CogObject):
         return WorldModel.GRID_SIZE
 
     def set_pos_from_netw(self, plcode, ij_pos):
-        self.irepr.state[plcode] = ij_pos
+        self.irepr.change_pl_position(plcode, ij_pos)
         self.pev(MyEvTypes.PlayerMoves)
 
     # - redefining...
     def add_bomb(self, x, y):
         print('subject model: bomb added')
         self.irepr.add_bomb(x, y)
-        self.pev(MyEvTypes.BombsetChanges, info=self.irepr.bombs)
+        self.pev(MyEvTypes.BombsetChanges, info=self.irepr.list_bombs())
 
     def remove_bomb(self, x, y):
         print('subject model: bomb removed')
         self.irepr.remove_bomb(x, y)
-        self.pev(MyEvTypes.BombsetChanges, info=self.irepr.bombs)
+        self.pev(MyEvTypes.BombsetChanges, info=self.irepr.list_bombs())
 
     # était utilisé avant websockets
     # def load_state(self, serial):

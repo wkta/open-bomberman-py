@@ -32,7 +32,7 @@ class PacketRecvCtrl(EventReceiver):
             self.force_gs_sync()
 
         elif ev.type == MyEvTypes.OtherGuyCame:
-            glvars.allplayers.add(ev.username)
+            glvars.allplayers.add(ev.plcode)
             self.force_gs_sync()
 
         elif ev.type == MyEvTypes.ServerStartingMatch:

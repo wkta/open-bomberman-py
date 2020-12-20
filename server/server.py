@@ -11,10 +11,8 @@ import server_logic
 from PlayerAction import PlayerAction
 from def_gevents import SERV_COMM_KEY
 
-
 thread = None
 thread_lock = Lock()
-
 
 # app = Flask(__name__)
 # app.config['SECRET_KEY'] = 'vnkdjnfjknfl1232#'
@@ -77,7 +75,7 @@ def index():
 
 @app.route('/move/<plcode>/<direct>')
 def move(plcode, direct):  # can use with direct==-1 to just query the position...
-    #if not gs_init:
+    # if not gs_init:
     #    gs_init = server_logic.loadstate(gamestate)
     plcode = int(plcode)
     server_logic.maj_gamestate(plcode, int(direct))
@@ -119,7 +117,7 @@ def handle_push_action(act_serial):
         print('player {} is posing bomb!'.format(da_actorid))
         new_b_date = time.time()
         i, j = server_logic.locate_player(da_actorid)
-        server_logic.bombs[(i, j)] = new_b_date
+        server_logic.world.add_bomb(i, j, new_b_date)
 
         kwargs = {'author': da_actorid, 'genesis_t': new_b_date, 'x': i, 'y': j}
         notify(room_name, 'bomb_creation', kwargs)
@@ -158,13 +156,13 @@ def on_join(data):
     server_logic.save_room(data['username'], rname)
 
     plcode = data['username']
-    server_logic.spawn_player(plcode)
+    initpos = server_logic.spawn_player(plcode)
 
     # temporaire: for now theres only one active room tbh
     onlyroom = rname
 
     print('{} has entered {}'.format(plcode, rname))
-    notify(rname, 'other_guy_came', {'username': plcode})
+    notify(rname, 'other_guy_came', {'plcode': plcode, 'initpos': initpos})
 
 
 @socketio.on('leave')
@@ -186,21 +184,24 @@ def bomb_checking():
         del to_be_rem[:]
         # check for bomb explosions
         tnow = time.time()
-        for bombpos, bdate in server_logic.bombs.items():
-            if (tnow - bdate) < server_logic.BOMB_DELAY:
+        infos = server_logic.world.get_bomb_infos()
+
+        for bombpos, bdate in infos.items():
+            if (tnow - bdate) < server_logic.bomb_delay():
                 continue
+
             # a bomb explodes!
             print('a bomb explodes!')
 
             # special way to emit... Non dependant of the active http connection
             socketio.emit(
                 'server_notification',
-                {SERV_COMM_KEY:'bomb_explosion', 'x': bombpos[0], 'y': bombpos[1]}
+                {SERV_COMM_KEY: 'bomb_explosion', 'x': bombpos[0], 'y': bombpos[1]}
             )
             to_be_rem.append(bombpos)
 
-        for elt in to_be_rem:
-            del server_logic.bombs[elt]
+        for id_pos in to_be_rem:
+            server_logic.world.remove_bomb(id_pos[0], id_pos[1])
         socketio.sleep(0.5)
 
 

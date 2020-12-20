@@ -51,8 +51,8 @@ class MultipGameView(EventReceiver):
             print('view receives PlayerMoves evt')
             del self._pl_positions[:]
 
-            for c in self._mod.irepr.state.values():
-                tmp = MultipGameView.game_to_scr_coords(*c)
+            for c in self._mod.irepr.list_players():
+                tmp = MultipGameView.game_to_scr_coords(c[1], c[2])
                 self._pl_positions.append(tmp)
 
     @staticmethod
