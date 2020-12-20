@@ -28,7 +28,7 @@ class PlayerAction:
 
     def serialize(self):
         res = 'a['
-        res += str(self.actor_id) + ',' +str(self.action_t)
+        res += str(self.actor_id) + ',' + str(self.action_t)
         res += ']'
 
         dico = dict()
@@ -47,5 +47,5 @@ if __name__ == '__main__':
     print('---')
     print(p.actor_id)
     print(p.action_t)
-    print(p.destx)
-    print(p.desty)
+    print(getattr(p, 'destx'))
+    print(getattr(p, 'desty'))

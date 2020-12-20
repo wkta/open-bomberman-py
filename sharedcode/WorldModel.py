@@ -12,12 +12,19 @@ class WorldModel:
     def __init__(self):
         super().__init__()
         self.state = dict()
+        self.bombs = set()
 
     def list_players(self):
         return range(1, self.NB_PLAYERS+1)
 
     def __getitem__(self, k_index):
         return self.state[int(k_index)]
+
+    def add_bomb(self, x, y):
+        self.bombs.add((x, y))
+
+    def remove_bomb(self, x, y):
+        self.bombs.remove((x, y))
 
     @classmethod
     def deserialize(cls, json_serial):

@@ -14,9 +14,14 @@ MyEvTypes = enum_for_custom_event_types(
     'GamestateServFeedback',  # used for sync client game state! Contains: plcode, new_pos
     'PlayerMoves',  # updating only view from player moves! Contains: plcode, new_pos
 
+    # - model-to-view comm.
+    'BombsetChanges',  # contains>> info:set of bomb locations
+
     # - network-related
-    'ConnectionOk',  # contains playercode:int
-    'PlayerMovement',  # contains plcode:int, new_pos:list
+    'ConnectionOk',  # contains>> playercode:int
+    'PlayerMovement',  # contains>> plcode:int, new_pos:list
+    'BombCreation',  # contains>> author:int, genesis_t:float, x:int, y:int
+    'BombExplosion',  # contains>> x:int, y:int
 
     'ChallengeStarts',
 )
