@@ -193,7 +193,7 @@ def bomb_checking():
             to_be_rem.append(bombpos)
 
         for id_pos in to_be_rem:
-            server_logic.world.remove_bomb(id_pos[0], id_pos[1])
+            server_logic.world.trigger_explosion(id_pos)
 
         if len(to_be_rem):
             # special way to emit... Non dependant of the active http connection

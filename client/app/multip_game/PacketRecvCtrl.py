@@ -35,11 +35,12 @@ class PacketRecvCtrl(EventReceiver):
         elif ev.type == MyEvTypes.OtherGuyCame:
             tmp = WorldModel.deserialize(ev.gamestate)
             self._mod.irepr.sync_state(tmp)
-
+            self._mod.tag_gs_change()
+        
         elif ev.type in (MyEvTypes.BombCreation, MyEvTypes.BombExplosion):
             tmp = WorldModel.deserialize(ev.gamestate)
             self._mod.irepr.sync_state(tmp)
-            self._mod.tag_bomb_change()
+            self._mod.tag_gs_change()
 
         elif ev.type == MyEvTypes.ServerStartingMatch:
             pass
@@ -47,4 +48,4 @@ class PacketRecvCtrl(EventReceiver):
         elif ev.type == MyEvTypes.PlayerMovement:  # MyEvTypes.GamestateServFeedback:
             tmp = WorldModel.deserialize(ev.gamestate)
             self._mod.irepr.sync_state(tmp)
-            self._mod.tag_playerpos_change()
+            self._mod.tag_gs_change()

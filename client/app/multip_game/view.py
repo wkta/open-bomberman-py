@@ -19,6 +19,10 @@ class MultipGameView(EventReceiver):
         self._bomb_positions = list()
         self._wall_positions = list()
 
+        self._refresh_walls()
+
+    def _refresh_walls(self):
+        del self._wall_positions[:]
         for wpos in self._mod.irepr.wall_locations():
             tmp_coords = MultipGameView.game_to_scr_coords(wpos[0], wpos[1])
             self._wall_positions.append(tmp_coords)
@@ -62,10 +66,13 @@ class MultipGameView(EventReceiver):
             self._draw_game_entities(ev.screen)
 
         elif ev.type == MyEvTypes.BombsetChanges:
+            # - refresh bombs
             del self._bomb_positions[:]
             for pos in ev.info:
                 tmp = MultipGameView.game_to_scr_coords(*pos)
                 self._bomb_positions.append(tmp)
+
+            self._refresh_walls()
 
         elif ev.type == MyEvTypes.PlayerMoves:
             print('view receives PlayerMoves evt')

@@ -123,6 +123,41 @@ class WorldModel:
 
     # -----------------------
     #  Triggered server-side
+
+    def trigger_explosion(self, ij_pos):
+        """
+        game logic: what is the effect of an exploding bomb?
+
+        :param ij_pos:
+        :return:
+        """
+        i, j = ij_pos
+        bomber = None
+        idx = None
+        for k, elt in enumerate(self.bomblist):
+            if elt[0] == i and elt[1] == j:
+                idx = k
+                bomber = elt[2]
+                break
+        del self.bomblist[idx]
+
+        for impacted_cell in WorldModel._comp_adjacent_cells(i, j):
+            if impacted_cell in self.gridstate:
+                if self.gridstate[impacted_cell] in (self.ETYPE_WALL, self.ETYPE_POWERUP):
+                    del self.gridstate[impacted_cell]
+                    print('removing content of {}'.format(impacted_cell))
+
+    @staticmethod
+    def _comp_adjacent_cells(i, j):
+        res = list()
+        for offsetx in (-1, +1):
+            if 0 <= i + offsetx < WorldModel.GRID_SIZE:
+                res.append((i+offsetx, j))
+        for offsety in (-1, +1):
+            if 0 <= j + offsety < WorldModel.GRID_SIZE:
+                res.append((i, j+offsety))
+        return res
+
     def spawn_player(self, plcode):
         # we list what positions are already taken, to compute what pos. are free
         free_possib = list(self._spawn_positions.keys())

@@ -18,15 +18,8 @@ class WorldSubjectMod(CogObject):
     def gridsize(self):
         return WorldModel.GRID_SIZE
 
-    # def set_pos_from_netw(self, plcode, ij_pos):
-    #     self.irepr.change_pl_position(plcode, ij_pos)
-
-    # - redefining...
-    def tag_bomb_change(self):
-        print('subject model: bomb added')
+    def tag_gs_change(self):
         self.pev(MyEvTypes.BombsetChanges, info=self.irepr.bomb_locations())
-
-    def tag_playerpos_change(self):
         self.pev(MyEvTypes.PlayerMoves)
 
     # était utilisé avant websockets
