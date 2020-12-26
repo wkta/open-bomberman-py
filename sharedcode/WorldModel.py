@@ -14,22 +14,26 @@ class WorldModel:
     """
 
     BOMB_DELAY = 3.8666  # sec
-    GRID_SIZE = 9
+    # GRID_SIZE = 9
+
+    GRID_WIDTH = 13
+    GRID_HEIGHT = 11
     NB_PLAYERS = 2
 
     # convention: id player ira de 1000 à 2000
-    ETYPE_WALL, ETYPE_POWERUP = range(2000, 2002)
+    ETYPE_BLOCK, ETYPE_WALL, ETYPE_POWERUP = range(2000, 2003)
 
     def __init__(self):
         super().__init__()
 
         # we set value to True when the spawn pos has been used
-        mxcoord = self.GRID_SIZE-1
+        xlimit = self.GRID_WIDTH-1
+        ylimit = self.GRID_HEIGHT-1
         self._spawn_positions = {
             (0,       0):       False,
-            (mxcoord, mxcoord): False,
-            (0,       mxcoord): False,
-            (mxcoord, 0):       False
+            (xlimit, ylimit): False,
+            (0,       ylimit): False,
+            (xlimit, 0):       False
         }
 
         # todo extend the gamestate
@@ -41,6 +45,7 @@ class WorldModel:
 
     def load_level(self, filename):
         all_wpos = list()
+        all_blocks = list()
 
         with open(filename, 'r') as f:
             matrx_type_obj = json.load(f)
@@ -48,9 +53,13 @@ class WorldModel:
                 for i, elt in enumerate(row):
                     if elt == 'W':
                         all_wpos.append((i, j))
+                    elif elt == 'X':
+                        all_blocks.append((i, j))
 
         for wpos in all_wpos:
             self.gridstate[wpos] = self.ETYPE_WALL
+        for wpos in all_blocks:
+            self.gridstate[wpos] = self.ETYPE_BLOCK
 
     def sync_state(self, other_world):
         grid_state, bombs = other_world.gridstate, other_world.bomblist
@@ -64,8 +73,8 @@ class WorldModel:
         self.bomblist.extend(bombs)
 
     def _refresh_pl_pos(self):
-        for i in range(self.GRID_SIZE):
-            for j in range(self.GRID_SIZE):
+        for i in range(self.GRID_WIDTH):
+            for j in range(self.GRID_HEIGHT):
                 if (i, j) not in self.gridstate:
                     continue
                 tmp = self.gridstate[(i, j)]
@@ -122,9 +131,17 @@ class WorldModel:
 
     def wall_locations(self):
         tmp = list()
-        for i in range(self.GRID_SIZE):
-            for j in range(self.GRID_SIZE):
+        for i in range(self.GRID_WIDTH):
+            for j in range(self.GRID_HEIGHT):
                 if ((i, j) in self.gridstate) and self.ETYPE_WALL == self.gridstate[(i, j)]:
+                    tmp.append((i, j))
+        return tmp
+
+    def blocks_locations(self):
+        tmp = list()
+        for i in range(self.GRID_WIDTH):
+            for j in range(self.GRID_HEIGHT):
+                if ((i, j) in self.gridstate) and self.ETYPE_BLOCK == self.gridstate[(i, j)]:
                     tmp.append((i, j))
         return tmp
 
@@ -158,10 +175,10 @@ class WorldModel:
     def _comp_adjacent_cells(i, j):
         res = list()
         for offsetx in (-1, +1):
-            if 0 <= i + offsetx < WorldModel.GRID_SIZE:
+            if 0 <= i + offsetx < WorldModel.GRID_WIDTH:
                 res.append((i+offsetx, j))
         for offsety in (-1, +1):
-            if 0 <= j + offsety < WorldModel.GRID_SIZE:
+            if 0 <= j + offsety < WorldModel.GRID_HEIGHT:
                 res.append((i, j+offsety))
         return res
 

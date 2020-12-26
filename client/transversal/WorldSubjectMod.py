@@ -16,7 +16,7 @@ class WorldSubjectMod(CogObject):
 
     @property
     def gridsize(self):
-        return WorldModel.GRID_SIZE
+        return WorldModel.GRID_WIDTH, WorldModel.GRID_HEIGHT
 
     def tag_gs_change(self):
         self.pev(MyEvTypes.BombsetChanges, info=self.irepr.bomb_locations())

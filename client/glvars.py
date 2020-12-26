@@ -3,7 +3,8 @@
 DEV_MODE = True
 NEED_NETW_DEBUG = False
 
-SCR_SIZE = (800, 600)
+SCR_SIZE = (1024, 860)
+CELL_SIZE_PX = 64
 GAME_TITLE = 'Open Bomberman Py'
 
 HOST_DEV = 'localhost'

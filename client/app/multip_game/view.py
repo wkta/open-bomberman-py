@@ -1,5 +1,6 @@
 import pygame
 
+import glvars
 from coremon_main import EngineEvTypes, EventReceiver
 from def_gevents import MyEvTypes
 from transversal.WorldSubjectMod import WorldSubjectMod
@@ -18,10 +19,16 @@ class MultipGameView(EventReceiver):
         self._pl_positions = list()
         self._bomb_positions = list()
         self._wall_positions = list()
+        self._blocks_positions = list()
 
-        self._refresh_walls()
+        self._refresh_block_n_walls()
 
-    def _refresh_walls(self):
+    def _refresh_block_n_walls(self):
+        del self._blocks_positions[:]
+        for wpos in self._mod.irepr.blocks_locations():
+            tmp_coords = MultipGameView.game_to_scr_coords(wpos[0], wpos[1])
+            self._blocks_positions.append(tmp_coords)
+
         del self._wall_positions[:]
         for wpos in self._mod.irepr.wall_locations():
             tmp_coords = MultipGameView.game_to_scr_coords(wpos[0], wpos[1])
@@ -30,12 +37,17 @@ class MultipGameView(EventReceiver):
     def _draw_game_entities(self, scr):
         # - DRAW ALL entities
         bluecol = (10, 88, 220)
+        darkgreen = (25, 85, 25)
         redcolor = (220, 11, 75)
         graycolor = (196, 196, 196)
 
         # draw walls
         for ppos in self._wall_positions:
             pygame.draw.rect(scr, bluecol, (ppos[0] - 30, ppos[1] - 30, 60, 60), 0)
+
+        # draw blocks
+        for ppos in self._blocks_positions:
+            pygame.draw.rect(scr, darkgreen, (ppos[0] - 30, ppos[1] - 30, 60, 60), 0)
 
         # draw players
         for ppos in self._pl_positions:
@@ -54,14 +66,14 @@ class MultipGameView(EventReceiver):
 
             # draw grid
             ax, ay = 15, 15
-            offsetpx = 64
-            lim = self._mod.gridsize
-            for i in range(lim + 1):
+            offsetpx = glvars.CELL_SIZE_PX
+            xlim, ylim = self._mod.gridsize
+            for i in range(xlim + 1):
                 tmp = ax + i * offsetpx
-                pygame.draw.line(ev.screen, (15, 192, 50), (tmp, ay), (tmp, ay + lim * offsetpx))
-            for j in range(lim + 1):
+                pygame.draw.line(ev.screen, (15, 192, 50), (tmp, ay), (tmp, ay + ylim * offsetpx))
+            for j in range(ylim + 1):
                 tmp = ay + j * offsetpx
-                pygame.draw.line(ev.screen, (15, 192, 50), (ax, tmp), (ax + lim * offsetpx, tmp))
+                pygame.draw.line(ev.screen, (15, 192, 50), (ax, tmp), (ax + xlim * offsetpx, tmp))
 
             self._draw_game_entities(ev.screen)
 
@@ -72,7 +84,7 @@ class MultipGameView(EventReceiver):
                 tmp = MultipGameView.game_to_scr_coords(*pos)
                 self._bomb_positions.append(tmp)
 
-            self._refresh_walls()
+            self._refresh_block_n_walls()
 
         elif ev.type == MyEvTypes.PlayerMoves:
             print('view receives PlayerMoves evt')

@@ -5,7 +5,7 @@ from WorldModel import WorldModel
 
 # - variables
 world = WorldModel()
-world.load_level('gamestate.json')
+world.load_level('gamelevel.json')
 
 prev_plcodes = dict()
 pl_to_room = dict()
@@ -54,8 +54,8 @@ def maj_gamestate(plcode: int, direct: int):
     tmp = world.player_location(plcode)
     if direct == 0:
         tmp[0] += 1
-        if tmp[0] >= WorldModel.GRID_SIZE:
-            tmp[0] = WorldModel.GRID_SIZE-1
+        if tmp[0] >= WorldModel.GRID_WIDTH:
+            tmp[0] = WorldModel.GRID_WIDTH-1
 
     elif direct == 1:
         tmp[1] -= 1
@@ -69,8 +69,8 @@ def maj_gamestate(plcode: int, direct: int):
 
     elif direct == 3:
         tmp[1] += 1
-        if tmp[1] >= WorldModel.GRID_SIZE:
-            tmp[1] = WorldModel.GRID_SIZE-1
+        if tmp[1] >= WorldModel.GRID_HEIGHT:
+            tmp[1] = WorldModel.GRID_HEIGHT-1
 
     if world.can_walk(tmp):
         world.change_pl_position(plcode, tuple(tmp))
