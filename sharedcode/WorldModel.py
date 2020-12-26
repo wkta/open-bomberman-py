@@ -1,3 +1,4 @@
+import json
 import random
 import time
 
@@ -35,25 +36,19 @@ class WorldModel:
         # instead of having plcode <> pos we should use pos <> entitytype (-> storing walls, bombs, bonuses)
         # +lets use another variable for player positions, bc players can overlap
         self.gridstate = dict()
-        self._init_level()
-
         self._plcode_to_pos = dict()
         self.bomblist = list()  # list of quads (i, j, plcode, timeinfo)
 
-    def _init_level(self):
-        all_wpos = [
-            (1, 1),
-            (2, 1),
-            (3, 1),
+    def load_level(self, filename):
+        all_wpos = list()
 
-            (3, 2),
-            (3, 3),
-            (4, 3),
+        with open(filename, 'r') as f:
+            matrx_type_obj = json.load(f)
+            for j, row in enumerate(matrx_type_obj):
+                for i, elt in enumerate(row):
+                    if elt == 'W':
+                        all_wpos.append((i, j))
 
-            (7, 7),
-            (6, 7),
-            (5, 7)
-        ]
         for wpos in all_wpos:
             self.gridstate[wpos] = self.ETYPE_WALL
 

@@ -5,6 +5,8 @@ from WorldModel import WorldModel
 
 # - variables
 world = WorldModel()
+world.load_level('gamestate.json')
+
 prev_plcodes = dict()
 pl_to_room = dict()
 force_quit = False
