@@ -19,7 +19,7 @@ MyEvTypes = enum_for_custom_event_types(
     'ChallengeStarts',
 
     # - INGAME network-related
-    'OtherGuyCame',  # contains plcode, initpos
+    'OtherGuyCame',  # contains gamestate
     'PlayerMovement',  # contains>> plcode:int, new_pos:list
     'BombCreation',  # contains>> author:int, genesis_t:float, x:int, y:int
     'BombExplosion',  # contains>> x:int, y:int

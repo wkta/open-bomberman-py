@@ -1,4 +1,5 @@
 from PlayerAction import PlayerAction
+from WorldModel import WorldModel
 from coremon_main import EventReceiver
 from transversal.WorldSubjectMod import WorldSubjectMod
 import glvars
@@ -32,17 +33,18 @@ class PacketRecvCtrl(EventReceiver):
             self.force_gs_sync()
 
         elif ev.type == MyEvTypes.OtherGuyCame:
-            glvars.allplayers.add(ev.plcode)
-            self.force_gs_sync()
+            tmp = WorldModel.deserialize(ev.gamestate)
+            self._mod.irepr.sync_state(tmp)
+
+        elif ev.type in (MyEvTypes.BombCreation, MyEvTypes.BombExplosion):
+            tmp = WorldModel.deserialize(ev.gamestate)
+            self._mod.irepr.sync_state(tmp)
+            self._mod.tag_bomb_change()
 
         elif ev.type == MyEvTypes.ServerStartingMatch:
             pass
 
-        elif ev.type == MyEvTypes.BombCreation:
-            self._mod.add_bomb(ev.x, ev.y)
-
-        elif ev.type == MyEvTypes.BombExplosion:
-            self._mod.remove_bomb(ev.x, ev.y)
-
         elif ev.type == MyEvTypes.PlayerMovement:  # MyEvTypes.GamestateServFeedback:
-            self._mod.set_pos_from_netw(ev.plcode, ev.new_pos)
+            tmp = WorldModel.deserialize(ev.gamestate)
+            self._mod.irepr.sync_state(tmp)
+            self._mod.tag_playerpos_change()

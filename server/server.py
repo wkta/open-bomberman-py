@@ -112,21 +112,21 @@ def handle_push_action(act_serial):
     room_name = server_logic.fetch_room(da_actorid)
     assert room_name is not None
 
-    # - bombs
+    # - create bomb
     if PlayerAction.T_BOMB == act_type:
         print('player {} is posing bomb!'.format(da_actorid))
-        new_b_date = time.time()
-        i, j = server_logic.locate_player(da_actorid)
-        server_logic.world.add_bomb(i, j, new_b_date)
 
-        kwargs = {'author': da_actorid, 'genesis_t': new_b_date, 'x': i, 'y': j}
+        new_b_date = time.time() + server_logic.bomb_delay()
+        server_logic.world.drop_bomb(da_actorid, new_b_date)
+
+        kwargs = {'gamestate': server_logic.world.serialize()}
         notify(room_name, 'bomb_creation', kwargs)
 
     # - movements
     elif PlayerAction.T_MOVEMENT == act_type:
         server_logic.maj_gamestate(da_actorid, int(player_action.direction))
         newi, newj = server_logic.locate_player(da_actorid)
-        kwargs = {'plcode': da_actorid, 'new_pos': [newi, newj]}
+        kwargs = {'gamestate': server_logic.world.serialize()}
         notify(room_name, 'player_movement', kwargs)
 
 
@@ -148,21 +148,17 @@ def test_disconnect():
 
 @socketio.on('join')
 def on_join(data):
-    # tmp
     global onlyroom
 
     rname = 'bomberman#{}'.format(data['room_num'])
     join_room(rname)
     server_logic.save_room(data['username'], rname)
-
     plcode = data['username']
-    initpos = server_logic.spawn_player(plcode)
+    server_logic.world.spawn_player(plcode)
 
-    # temporaire: for now theres only one active room tbh
-    onlyroom = rname
-
+    onlyroom = rname  # temp.: for now theres only one active room tbh
     print('{} has entered {}'.format(plcode, rname))
-    notify(rname, 'other_guy_came', {'plcode': plcode, 'initpos': initpos})
+    notify(rname, 'other_guy_came', {'gamestate': server_logic.world.serialize()})
 
 
 @socketio.on('leave')
@@ -184,24 +180,27 @@ def bomb_checking():
         del to_be_rem[:]
         # check for bomb explosions
         tnow = time.time()
-        infos = server_logic.world.get_bomb_infos()
 
-        for bombpos, bdate in infos.items():
-            if (tnow - bdate) < server_logic.bomb_delay():
+        for elt in server_logic.world.list_bombs():
+            i, j, _, bdate = elt
+            bombpos = (i, j)
+
+            if tnow < bdate:
                 continue
 
             # a bomb explodes!
             print('a bomb explodes!')
-
-            # special way to emit... Non dependant of the active http connection
-            socketio.emit(
-                'server_notification',
-                {SERV_COMM_KEY: 'bomb_explosion', 'x': bombpos[0], 'y': bombpos[1]}
-            )
             to_be_rem.append(bombpos)
 
         for id_pos in to_be_rem:
             server_logic.world.remove_bomb(id_pos[0], id_pos[1])
+
+        if len(to_be_rem):
+            # special way to emit... Non dependant of the active http connection
+            socketio.emit(
+                'server_notification',
+                {SERV_COMM_KEY: 'bomb_explosion', 'gamestate': server_logic.world.serialize()}
+            )
         socketio.sleep(0.5)
 
 

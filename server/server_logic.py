@@ -18,9 +18,9 @@ def fetch_room(plname):
 
 def gen_username():
     global prev_plcodes
-    num = random.randint(998, 2866791137)
+    num = random.randint(1000, 1999)
     while num in prev_plcodes:
-        num = random.randint(998, 2866791137)
+        num = random.randint(1000, 1999)
     return num
 
 
@@ -70,12 +70,7 @@ def maj_gamestate(plcode: int, direct: int):
         if tmp[1] >= WorldModel.GRID_SIZE:
             tmp[1] = WorldModel.GRID_SIZE-1
 
-    world.change_pl_position(plcode, tmp)
-
-
-def spawn_player(plcode):
-    global world
-    return world.consume_spawn(plcode)
+    world.change_pl_position(plcode, tuple(tmp))
 
 
 # def loadstate():

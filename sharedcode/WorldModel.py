@@ -1,4 +1,5 @@
-import json
+import random
+import time
 
 
 class WorldModel:
@@ -14,7 +15,9 @@ class WorldModel:
     BOMB_DELAY = 3.8666  # sec
     GRID_SIZE = 9
     NB_PLAYERS = 2
-    ETYPE_WALL, ETYPE_BOMB = range(189237, 189237+2)
+
+    # convention: id player ira de 1000 à 2000
+    ETYPE_WALL, ETYPE_POWERUP = range(2000, 2002)
 
     def __init__(self):
         super().__init__()
@@ -31,11 +34,11 @@ class WorldModel:
         # todo extend the gamestate
         # instead of having plcode <> pos we should use pos <> entitytype (-> storing walls, bombs, bonuses)
         # +lets use another variable for player positions, bc players can overlap
-        self._grid_state = dict()
+        self.gridstate = dict()
         self._init_level()
 
-        self._pl_positions = dict()
-        self._bomb_infos = dict()  # assoc position(int,int) <> date when planted(float)
+        self._plcode_to_pos = dict()
+        self.bomblist = list()  # list of quads (i, j, plcode, timeinfo)
 
     def _init_level(self):
         all_wpos = [
@@ -48,80 +51,138 @@ class WorldModel:
             (5, 7)
         ]
         for wpos in all_wpos:
-            self._grid_state[wpos] = self.ETYPE_WALL
+            self.gridstate[wpos] = self.ETYPE_WALL
 
-    def list_players(self):
+    def sync_state(self, other_world):
+        grid_state, bombs = other_world.gridstate, other_world.bomblist
+        # clear existing state
+        self._plcode_to_pos.clear()
+        del self.bomblist[:]
+
+        # replacing
+        self.gridstate = grid_state
+        self._refresh_pl_pos()
+        self.bomblist.extend(bombs)
+
+    def _refresh_pl_pos(self):
+        for i in range(self.GRID_SIZE):
+            for j in range(self.GRID_SIZE):
+                if (i, j) not in self.gridstate:
+                    continue
+                tmp = self.gridstate[(i, j)]
+                if 1000 <= tmp < 2000:
+                    self._plcode_to_pos[tmp] = (i, j)
+
+    def all_players_position(self):
         """
-        :return: list of triplets plcode, i, j
+        :return: list of triplets in the form of: plcode, i, j
         """
         res = list()
-
-        mecs = list(self._pl_positions.keys())
-        for m in mecs:
-            i, j = self._pl_positions[m]
-            triplet = (m, i, j)
+        for plcode, pos in self._plcode_to_pos.items():
+            triplet = (plcode, pos[0], pos[1])
             res.append(triplet)
-
         return res
 
     # * shared on both sides *
 
-    def change_pl_position(self, plcode, ijpos):
-        self._pl_positions[plcode] = ijpos
+    def list_bombs(self):
+        return self.bomblist
 
-    def add_bomb(self, x, y, timeinfo=None):
-        self._bomb_infos[(x, y)] = timeinfo
-        self._grid_state[(x, y)] = self.ETYPE_BOMB
+    def change_pl_position(self, plcode, ijpos: tuple):
+        old_pos = self._plcode_to_pos[plcode]
+        del self.gridstate[old_pos]
+
+        self._plcode_to_pos[plcode] = ijpos
+        self.gridstate[ijpos] = plcode
+
+    def drop_bomb(self, plcode, timeinfo=None):
+        i, j = self._plcode_to_pos[plcode]
+        self.bomblist.append((i, j, plcode, timeinfo))
 
     def remove_bomb(self, x, y):
-        self._grid_state[(x, y)] = None
-        del self._bomb_infos[(x, y)]
+        idx = None
+        for k, elt in enumerate(self.bomblist):
+            if elt[0] == x and elt[1] == y:
+                idx = k
+                break
+        del self.bomblist[idx]
 
     def bomb_locations(self):
-        return list(self._bomb_infos.keys())
+        res = list()
+        for elt in self.bomblist:
+            res.append((elt[0], elt[1]))
+        return res
 
     def wall_locations(self):
         tmp = list()
         for i in range(self.GRID_SIZE):
             for j in range(self.GRID_SIZE):
-                if ((i, j) in self._grid_state) and self.ETYPE_WALL == self._grid_state[(i, j)]:
+                if ((i, j) in self.gridstate) and self.ETYPE_WALL == self.gridstate[(i, j)]:
                     tmp.append((i, j))
         return tmp
 
-    def get_bomb_infos(self):
-        return dict(self._bomb_infos)
-
     # -----------------------
     #  Triggered server-side
-    def consume_spawn(self, plcode):
-        res = None
-        for spawn_p in self._spawn_positions:
-            if self._spawn_positions[spawn_p]:
-                continue
+    def spawn_player(self, plcode):
+        # we list what positions are already taken, to compute what pos. are free
+        free_possib = list(self._spawn_positions.keys())
+        to_prune_possib = set()
+        for p in free_possib:
+            if self._spawn_positions[p]:
+                to_prune_possib.add(p)
+        for elt in to_prune_possib:
+            free_possib.remove(elt)
 
-            self._spawn_positions[spawn_p] = True
-            self._pl_positions[plcode] = spawn_p
-            res = spawn_p
-            break
-        return res
+        if len(free_possib) == 0:
+            raise ValueError('no spawn position left for spawning player!')
+
+        initpos = random.choice(free_possib)
+        self._spawn_positions[initpos] = True
+
+        self._plcode_to_pos[plcode] = initpos
+        self.gridstate[initpos] = plcode
 
     def player_location(self, plcode):
-        return list(self._pl_positions[plcode])
+        return list(self._plcode_to_pos[plcode])
 
     def serialize(self):
         # NEITHER players pos, NOR timeinfo on bombs areserialized/!\
-        return json.dumps(self._grid_state)
+        res = str(self.gridstate)
+        res += '|'
+        res += str(self.bomblist)
+        return res
 
     # -----------------------
     #  Triggered client-side
     def __getitem__(self, xy_info):
         x, y = xy_info
-        return self._grid_state[x][y]
+        return self.gridstate[x][y]
 
     @classmethod
-    def deserialize(cls, json_serial):
+    def deserialize(cls, serial):
         obj = cls()
-        d = json.loads(json_serial)
-        assert cls.NB_PLAYERS == len(d)
-        obj._grid_state = d
+        tmp = serial.split('|')
+        dico = eval(tmp[0])
+        li = eval(tmp[1])
+
+        obj.gridstate = dico
+        obj.bomblist = li
+        obj._refresh_pl_pos()
+
         return obj
+
+
+if __name__ == '__main__':
+    print('saleu')
+    monde = WorldModel()
+
+    monde.spawn_player(1000)
+    monde.spawn_player(1001)
+    monde.spawn_player(1002)
+
+    monde.drop_bomb(1002, time.time()+3.8)
+
+    val_s = monde.serialize()
+
+    copie = WorldModel.deserialize(val_s)
+    print(copie.serialize())
