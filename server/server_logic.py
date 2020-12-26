@@ -70,7 +70,10 @@ def maj_gamestate(plcode: int, direct: int):
         if tmp[1] >= WorldModel.GRID_SIZE:
             tmp[1] = WorldModel.GRID_SIZE-1
 
-    world.change_pl_position(plcode, tuple(tmp))
+    if world.can_walk(tmp):
+        world.change_pl_position(plcode, tuple(tmp))
+        return True
+    return False
 
 
 # def loadstate():

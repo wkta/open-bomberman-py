@@ -124,10 +124,11 @@ def handle_push_action(act_serial):
 
     # - movements
     elif PlayerAction.T_MOVEMENT == act_type:
-        server_logic.maj_gamestate(da_actorid, int(player_action.direction))
-        newi, newj = server_logic.locate_player(da_actorid)
-        kwargs = {'gamestate': server_logic.world.serialize()}
-        notify(room_name, 'player_movement', kwargs)
+        change_occurs = server_logic.maj_gamestate(da_actorid, int(player_action.direction))
+
+        if change_occurs:
+            kwargs = {'gamestate': server_logic.world.serialize()}
+            notify(room_name, 'player_movement', kwargs)
 
 
 @socketio.on('connect')

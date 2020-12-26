@@ -46,6 +46,10 @@ class WorldModel:
             (2, 1),
             (3, 1),
 
+            (3, 2),
+            (3, 3),
+            (4, 3),
+
             (7, 7),
             (6, 7),
             (5, 7)
@@ -84,6 +88,14 @@ class WorldModel:
         return res
 
     # * shared on both sides *
+    def can_walk(self, future_pos):
+        k = tuple(future_pos)
+        if k in self.gridstate:
+            return False
+        for elt in self.bomblist:
+            if elt[0] == future_pos[0] and elt[1] == future_pos[1]:
+                return False
+        return True
 
     def list_bombs(self):
         return self.bomblist
