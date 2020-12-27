@@ -12,6 +12,7 @@ class WorldModel:
         -> what's the delay before bomb explosions?
         -> who dies when a bomb explodes?
     """
+    COUNTDOWN_DUR = 7  # sec
 
     BOMB_DELAY = 3.8666  # sec
     # GRID_SIZE = 9
@@ -42,6 +43,9 @@ class WorldModel:
         self.gridstate = dict()
         self._plcode_to_pos = dict()
         self.bomblist = list()  # list of quads (i, j, plcode, timeinfo)
+        self._started_match = False
+
+        self._last_spawn = None
 
     def load_level(self, filename):
         all_wpos = list()
@@ -93,13 +97,33 @@ class WorldModel:
 
     # * shared on both sides *
     def can_walk(self, future_pos):
+        if not self.has_match_started():
+            return False
+
         k = tuple(future_pos)
         if k in self.gridstate:
             return False
+
         for elt in self.bomblist:
             if elt[0] == future_pos[0] and elt[1] == future_pos[1]:
                 return False
+
         return True
+
+    def has_match_started(self):
+        return self._started_match
+
+    def can_start(self, tnow):
+        if len(self._plcode_to_pos) >= 2:
+            if tnow - self._last_spawn > WorldModel.COUNTDOWN_DUR:
+                return True
+        return False
+
+    def start_match(self):
+        self._started_match = True
+
+    def list_players(self):
+        return list(self._plcode_to_pos.keys())
 
     def list_bombs(self):
         return self.bomblist
@@ -111,7 +135,7 @@ class WorldModel:
         self._plcode_to_pos[plcode] = ijpos
         self.gridstate[ijpos] = plcode
 
-    def drop_bomb(self, plcode, timeinfo=None):
+    def drop_bomb(self, plcode, timeinfo):
         i, j = self._plcode_to_pos[plcode]
         self.bomblist.append((i, j, plcode, timeinfo))
 
@@ -182,7 +206,7 @@ class WorldModel:
                 res.append((i, j+offsety))
         return res
 
-    def spawn_player(self, plcode):
+    def spawn_player(self, plcode, tnow):
         # we list what positions are already taken, to compute what pos. are free
         free_possib = list(self._spawn_positions.keys())
         to_prune_possib = set()
@@ -194,6 +218,8 @@ class WorldModel:
 
         if len(free_possib) == 0:
             raise ValueError('no spawn position left for spawning player!')
+
+        self._last_spawn = tnow
 
         initpos = random.choice(free_possib)
         self._spawn_positions[initpos] = True
@@ -209,6 +235,11 @@ class WorldModel:
         res = str(self.gridstate)
         res += '|'
         res += str(self.bomblist)
+        res += '|'
+        if self._started_match:
+            res += '1'
+        else:
+            res += '0'
         return res
 
     # -----------------------
@@ -227,6 +258,10 @@ class WorldModel:
         obj.gridstate = dico
         obj.bomblist = li
         obj._refresh_pl_pos()
+        if tmp[2] == '1':
+            obj._started_match = True
+        else:
+            obj._started_match = False
 
         return obj
 
@@ -235,9 +270,9 @@ if __name__ == '__main__':
     print('saleu')
     monde = WorldModel()
 
-    monde.spawn_player(1000)
-    monde.spawn_player(1001)
-    monde.spawn_player(1002)
+    monde.spawn_player(1000, 15897312)
+    monde.spawn_player(1001, 143987.8)
+    monde.spawn_player(1002, 1534897)
 
     monde.drop_bomb(1002, time.time()+3.8)
 

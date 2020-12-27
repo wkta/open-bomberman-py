@@ -155,7 +155,7 @@ def on_join(data):
     join_room(rname)
     server_logic.save_room(data['username'], rname)
     plcode = data['username']
-    server_logic.world.spawn_player(plcode)
+    server_logic.world.spawn_player(plcode, time.time())
 
     onlyroom = rname  # temp.: for now theres only one active room tbh
     print('{} has entered {}'.format(plcode, rname))
@@ -171,8 +171,27 @@ def on_leave(data):
     print('{} has left {}'.format(data['username'], rname))
 
 
+def broadcast_event(e_type_camelcase):
+    # special way to emit... Non dependant of the active http connection
+    socketio.emit(
+        'server_notification',
+        {SERV_COMM_KEY: e_type_camelcase, 'gamestate': server_logic.world.serialize()}
+    )
+
+
 # -------- multiproc ---
 def bomb_checking():
+    print('checking for match start...')
+    sys.stdout.flush()
+    while not server_logic.world.has_match_started():
+        tnow = time.time()
+        if server_logic.world.can_start(tnow):
+            print('OK match starting!')
+            server_logic.world.start_match()
+            broadcast_event('challenge_starts')
+        else:
+            socketio.sleep(1.0)
+
     print('checking for bombs...')
     sys.stdout.flush()
     to_be_rem = list()
@@ -186,23 +205,17 @@ def bomb_checking():
             i, j, _, bdate = elt
             bombpos = (i, j)
 
-            if tnow < bdate:
-                continue
-
-            # a bomb explodes!
-            print('a bomb explodes!')
-            to_be_rem.append(bombpos)
-
-        for id_pos in to_be_rem:
-            server_logic.world.trigger_explosion(id_pos)
+            if tnow >= bdate:
+                # a bomb explodes!
+                print('a bomb explodes!')
+                to_be_rem.append(bombpos)
 
         if len(to_be_rem):
-            # special way to emit... Non dependant of the active http connection
-            socketio.emit(
-                'server_notification',
-                {SERV_COMM_KEY: 'bomb_explosion', 'gamestate': server_logic.world.serialize()}
-            )
-        socketio.sleep(0.5)
+            for id_pos in to_be_rem:
+                server_logic.world.trigger_explosion(id_pos)
+            broadcast_event('bomb_explosion')
+        else:
+            socketio.sleep(0.333)
 
 
 if __name__ == '__main__':

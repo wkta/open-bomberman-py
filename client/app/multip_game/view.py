@@ -1,6 +1,7 @@
 import pygame
 
 import glvars
+import gui
 from coremon_main import EngineEvTypes, EventReceiver
 from def_gevents import MyEvTypes
 from transversal.WorldSubjectMod import WorldSubjectMod
@@ -22,6 +23,14 @@ class MultipGameView(EventReceiver):
         self._blocks_positions = list()
 
         self._refresh_block_n_walls()
+
+        # wait text
+        ft = pygame.font.Font(None, 77)
+        titlepos = [glvars.SCR_SIZE[0] // 2, glvars.SCR_SIZE[1] // 2]
+        titlepos[1] -= glvars.SCR_SIZE[1] // 3
+        self._plz_wait_label = gui.Text(
+            'Waiting for other players... Please wait', ft, titlepos, anchortype=gui.Text.ANCHOR_CENTER
+        )
 
     def _refresh_block_n_walls(self):
         del self._blocks_positions[:]
@@ -76,6 +85,13 @@ class MultipGameView(EventReceiver):
                 pygame.draw.line(ev.screen, (15, 192, 50), (ax, tmp), (ax + xlim * offsetpx, tmp))
 
             self._draw_game_entities(ev.screen)
+
+            # draw txt
+            if self._plz_wait_label:
+                self._plz_wait_label.paint(ev.screen)
+
+        elif ev.type == MyEvTypes.ChallengeStarts:
+            self._plz_wait_label = None
 
         elif ev.type == MyEvTypes.BombsetChanges:
             # - refresh bombs

@@ -14,11 +14,11 @@ class MenuScreenView(EventReceiver):
 
         ft = pygame.font.Font(None, 77)
         titlepos = [glvars.SCR_SIZE[0] // 2, glvars.SCR_SIZE[1] // 2]
-        titlepos[1] -= (2 ** 7 + 2 ** 5)
+        titlepos[1] -= glvars.SCR_SIZE[1] // 3
         self.label = gui.Text('~ {} ~'.format(glvars.GAME_TITLE), ft, titlepos, anchortype=gui.Text.ANCHOR_CENTER)
 
         self._small_ft = pygame.font.Font(None, 24)
-        line_spacing_modes = 68  # px
+        line_spacing_modes = 55  # px
 
         self._texts = [
             'solo game',
@@ -29,7 +29,7 @@ class MenuScreenView(EventReceiver):
         self._curr_texts = list(self._texts)
         self._nb_modes = len(self._curr_texts)
         self._mode_positions = [
-            (glvars.SCR_SIZE[0] // 2, 200 + i * line_spacing_modes) for i in range(self._nb_modes)
+            (glvars.SCR_SIZE[0] // 2, titlepos[1] + i * line_spacing_modes) for i in range(2, self._nb_modes+2)
         ]
         self.lbl_modes = list()
 
