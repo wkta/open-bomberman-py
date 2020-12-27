@@ -43,9 +43,10 @@ class WorldModel:
         self.gridstate = dict()
         self._plcode_to_pos = dict()
         self.bomblist = list()  # list of quads (i, j, plcode, timeinfo)
-        self._started_match = False
 
         self._last_spawn = None
+        self._started_match = False
+        self.match_winner = None
 
     def load_level(self, filename):
         all_wpos = list()
@@ -191,9 +192,16 @@ class WorldModel:
 
         for impacted_cell in WorldModel._comp_adjacent_cells(i, j):
             if impacted_cell in self.gridstate:
-                if self.gridstate[impacted_cell] in (self.ETYPE_WALL, self.ETYPE_POWERUP):
+                t_impacted_cell = self.gridstate[impacted_cell]
+                if t_impacted_cell in (WorldModel.ETYPE_WALL, WorldModel.ETYPE_POWERUP):
                     del self.gridstate[impacted_cell]
-                    print('removing content of {}'.format(impacted_cell))
+
+                elif 1000 <= t_impacted_cell < 2000:  # is a player
+                    dead_player = t_impacted_cell
+                    del self._plcode_to_pos[dead_player]
+                    del self.gridstate[impacted_cell]
+                    if len(self._plcode_to_pos) < 2:  # one man standing...
+                        self.match_winner = bomber
 
     @staticmethod
     def _comp_adjacent_cells(i, j):
@@ -240,6 +248,10 @@ class WorldModel:
             res += '1'
         else:
             res += '0'
+        if self.match_winner is None:
+            res += '|0'
+        else:
+            res += '|' + str(self.match_winner)
         return res
 
     # -----------------------
@@ -262,6 +274,10 @@ class WorldModel:
             obj._started_match = True
         else:
             obj._started_match = False
+        if tmp[3] == '0':
+            pass
+        else:
+            obj.match_winner = int(tmp[3])
 
         return obj
 

@@ -212,8 +212,15 @@ def bomb_checking():
 
         if len(to_be_rem):
             for id_pos in to_be_rem:
+                print('removing bomb {}'.format(id_pos))
                 server_logic.world.trigger_explosion(id_pos)
+
             broadcast_event('bomb_explosion')
+
+            if server_logic.world.match_winner is not None:
+                broadcast_event('challenge_ends')
+            # ---
+
         else:
             socketio.sleep(0.333)
 

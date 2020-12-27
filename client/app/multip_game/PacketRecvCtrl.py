@@ -66,6 +66,11 @@ class PacketRecvCtrl(EventReceiver):
             tmp = WorldModel.deserialize(ev.gamestate)
             self._mod.irepr.sync_state(tmp)
 
+        elif ev.type == MyEvTypes.ChallengeEnds:
+            tmp = WorldModel.deserialize(ev.gamestate)
+            print(' *** match winner is : {} *** '.format(tmp.match_winner))
+            self.pev(EngineEvTypes.POPSTATE)
+
         elif ev.type == MyEvTypes.PlayerMovement:  # MyEvTypes.GamestateServFeedback:
             tmp = WorldModel.deserialize(ev.gamestate)
             self._mod.irepr.sync_state(tmp)
