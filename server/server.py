@@ -9,6 +9,7 @@ from flask_socketio import emit
 
 import server_logic
 from PlayerAction import PlayerAction
+from WorldModel import WorldModel
 from def_gevents import SERV_COMM_KEY
 
 thread = None
@@ -74,12 +75,11 @@ def index():
 
 
 @app.route('/move/<plcode>/<direct>')
-def move(plcode, direct):  # can use with direct==-1 to just query the position...
-    # if not gs_init:
-    #    gs_init = server_logic.loadstate(gamestate)
+def move(plcode, direct):
+    # user can give direct==-1 just to query the position...
     plcode = int(plcode)
     server_logic.maj_gamestate(plcode, int(direct))
-    return jsonify(server_logic.locate_player(plcode))
+    return jsonify(server_logic.world.player_location(plcode))
 
 
 # @app.route('/statesig')
@@ -116,7 +116,7 @@ def handle_push_action(act_serial):
     if PlayerAction.T_BOMB == act_type:
         print('player {} is posing bomb!'.format(da_actorid))
 
-        new_b_date = time.time() + server_logic.bomb_delay()
+        new_b_date = time.time() + WorldModel.BOMB_DELAY
         server_logic.world.drop_bomb(da_actorid, new_b_date)
 
         kwargs = {'gamestate': server_logic.world.serialize()}

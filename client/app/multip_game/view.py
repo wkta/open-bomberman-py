@@ -17,7 +17,7 @@ class MultipGameView(EventReceiver):
         self.img_pos = (200, 60)
         self._mod = mod
 
-        self._pl_positions = list()
+        self._player_infos = list()
         self._bomb_positions = list()
         self._wall_positions = list()
         self._blocks_positions = list()
@@ -59,8 +59,8 @@ class MultipGameView(EventReceiver):
             pygame.draw.rect(scr, darkgreen, (ppos[0] - 30, ppos[1] - 30, 60, 60), 0)
 
         # draw players
-        for ppos in self._pl_positions:
-            pygame.draw.circle(scr, redcolor, ppos, 32, 0)
+        for i, j, plcolor in self._player_infos:
+            pygame.draw.circle(scr, plcolor, (i, j), 32, 0)
 
         # draw bombs
         for ppos in self._bomb_positions:
@@ -104,11 +104,17 @@ class MultipGameView(EventReceiver):
 
         elif ev.type == MyEvTypes.PlayerMoves:
             print('view receives PlayerMoves evt')
-            del self._pl_positions[:]
+            del self._player_infos[:]
 
-            for c in self._mod.irepr.all_players_position():
-                tmp = MultipGameView.game_to_scr_coords(c[1], c[2])
-                self._pl_positions.append(tmp)
+            for tripletinfos in self._mod.irepr.all_players_position():
+                plcode, i, j = tripletinfos
+                ip, jp = MultipGameView.game_to_scr_coords(i, j)
+                color = MultipGameView.color_from_plcode(plcode)
+                self._player_infos.append((ip, jp, color))
+
+    @staticmethod
+    def color_from_plcode(x: int):
+        return (17*x) % 255, (x - 158) % 255, (39*x+111) % 255
 
     @staticmethod
     def game_to_scr_coords(i, j):

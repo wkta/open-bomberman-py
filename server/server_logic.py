@@ -35,21 +35,18 @@ def save_room(plname, room):
 
 
 # ----------------------------
-#  INGAME STUFF
+#  IN-GAME STUFF
 # ----------------------------
-def bomb_delay():
-    return WorldModel.BOMB_DELAY
-
-
-def locate_player(plcode):
-    global world
-    return world.player_location(plcode)
-
-
 def maj_gamestate(plcode: int, direct: int):
-    global world
+    """
+    attempts to perform player movement.
 
-    print(' SERV: maj gamestate')
+    :param plcode:
+    :param direct: 0, 1, 2, 3 counter-clockwise direction code, starts at East direction, then North etc.
+
+    :return: True if gamestate has changed... False otherwise
+    """
+    global world
 
     tmp = world.player_location(plcode)
     if direct == 0:
@@ -75,16 +72,5 @@ def maj_gamestate(plcode: int, direct: int):
     if world.can_walk(tmp):
         world.change_pl_position(plcode, tuple(tmp))
         return True
+
     return False
-
-
-# def loadstate():
-#     global gamestate
-#     gmstate = gamestate
-#     with open('gamestate.json', 'r') as fptr:
-#         obj = json.load(fptr)
-#
-#         gmstate.clear()
-#         for k, v in obj.items():
-#             gmstate[int(k)] = v
-#         return True

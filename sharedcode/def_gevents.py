@@ -16,7 +16,9 @@ MyEvTypes = enum_for_custom_event_types(
     # - network-related
     'ConnectionOk',  # contains>> playercode:int
     'ServerStartingMatch',  # the server automatically starts a new match after 10sec
+
     'ChallengeStarts',
+    'ChallengeEnds',  # someone just won => the game ends
 
     # - INGAME network-related
     'OtherGuyCame',  # contains gamestate
