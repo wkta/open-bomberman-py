@@ -114,13 +114,14 @@ def handle_push_action(act_serial):
 
     # - create bomb
     if PlayerAction.T_BOMB == act_type:
-        print('player {} is posing bomb!'.format(da_actorid))
+        with thread_lock:
+            print('player {} is posing bomb!'.format(da_actorid))
 
-        new_b_date = time.time() + WorldModel.BOMB_DELAY
-        server_logic.world.drop_bomb(da_actorid, new_b_date)
+            new_b_date = time.time() + WorldModel.BOMB_DELAY
+            server_logic.world.drop_bomb(da_actorid, new_b_date)
 
-        kwargs = {'gamestate': server_logic.world.serialize()}
-        notify(room_name, 'bomb_creation', kwargs)
+            kwargs = {'gamestate': server_logic.world.serialize()}
+            notify(room_name, 'bomb_creation', kwargs)
 
     # - movements
     elif PlayerAction.T_MOVEMENT == act_type:
@@ -133,10 +134,12 @@ def handle_push_action(act_serial):
 
 @socketio.on('connect')
 def test_connect():
-    global thread
+    global thread, socketio
+    print('***reception socketio.connect***')
+
     with thread_lock:
         if thread is None:
-            thread = socketio.start_background_task(bomb_checking)
+            thread = socketio.start_background_task(server_side_gameloop)
 
     kwargs = {'playercode': server_logic.gen_username()}
     notify(None, 'connection_ok', kwargs)
@@ -172,6 +175,7 @@ def on_leave(data):
 
 
 def broadcast_event(e_type_camelcase):
+    global socketio
     # special way to emit... Non dependant of the active http connection
     socketio.emit(
         'server_notification',
@@ -180,7 +184,9 @@ def broadcast_event(e_type_camelcase):
 
 
 # -------- multiproc ---
-def bomb_checking():
+def server_side_gameloop():
+    global socketio
+
     print('checking for match start...')
     sys.stdout.flush()
     while not server_logic.world.has_match_started():
@@ -197,34 +203,37 @@ def bomb_checking():
     to_be_rem = list()
 
     while not server_logic.force_quit:
-        del to_be_rem[:]
-        # check for bomb explosions
-        tnow = time.time()
 
-        for elt in server_logic.world.list_bombs():
-            i, j, _, bdate = elt
-            bombpos = (i, j)
+        with thread_lock:
+            tnow = time.time()
+            del to_be_rem[:]
 
-            if tnow >= bdate:
-                # a bomb explodes!
-                print('a bomb explodes!')
-                to_be_rem.append(bombpos)
+            # compte bombes a exploser
+            for elt in server_logic.world.list_bombs():
+                i, j, _, bdate = elt
+                bombpos = (i, j)
 
-        if len(to_be_rem):
-            for id_pos in to_be_rem:
-                print('removing bomb {}'.format(id_pos))
-                server_logic.world.trigger_explosion(id_pos)
+                if tnow >= bdate:
+                    # a bomb explodes!
+                    print('a bomb explodes!')
+                    to_be_rem.append(bombpos)
 
-            broadcast_event('bomb_explosion')
+            if len(to_be_rem) > 0:
+                for id_pos in to_be_rem:
+                    print('removing bomb {}'.format(id_pos))
+                    server_logic.world.trigger_explosion(id_pos)
 
-            if server_logic.world.match_winner is not None:
-                broadcast_event('challenge_ends')
-            # ---
+                broadcast_event('bomb_explosion')
 
-        else:
-            socketio.sleep(0.333)
+                if server_logic.world.match_winner is not None:
+                    broadcast_event('challenge_ends')
+            # - fin thread lock
+
+        socketio.sleep(0.25)
 
 
 if __name__ == '__main__':
     tmp = _parser.parse_args()
-    socketio.run(app, port=int(tmp.port))
+    print('open bomberman py SERVER')
+    print('host= {} | port= {}'.format(tmp.host, tmp.port))
+    socketio.run(app, host=tmp.host, port=int(tmp.port))
