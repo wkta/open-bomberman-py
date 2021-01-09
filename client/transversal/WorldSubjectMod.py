@@ -14,6 +14,9 @@ class WorldSubjectMod(CogObject):
         self.is_sync = False
         self.irepr = WorldModel()
 
+    def getgfxid(self, plcode):
+        return self.irepr.getgfxid(plcode)
+
     @property
     def gridsize(self):
         return WorldModel.GRID_WIDTH, WorldModel.GRID_HEIGHT

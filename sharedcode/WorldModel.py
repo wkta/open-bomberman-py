@@ -12,6 +12,9 @@ class WorldModel:
         -> what's the delay before bomb explosions?
         -> who dies when a bomb explodes?
     """
+
+    freegfxid = 0
+
     COUNTDOWN_DUR = 7  # sec
 
     BOMB_DELAY = 3.8666  # sec
@@ -47,6 +50,13 @@ class WorldModel:
         self._last_spawn = None
         self._started_match = False
         self.match_winner = None
+        self.gfxs = dict()
+
+    def use_new_gfxid(self, plcode):
+        gid = self.__class__.freegfxid
+        self.__class__.freegfxid += 1
+        self.gfxs[plcode] = gid
+        return gid
 
     def load_level(self, filename):
         all_wpos = list()
@@ -71,6 +81,8 @@ class WorldModel:
         # clear existing state
         self._plcode_to_pos.clear()
         del self.bomblist[:]
+
+        self.gfxs = other_world.gfxs
 
         # replacing
         self.gridstate = grid_state
@@ -238,10 +250,17 @@ class WorldModel:
     def player_location(self, plcode):
         return list(self._plcode_to_pos[plcode])
 
+    def getgfxid(self, plcode):
+        return self.gfxs[plcode]
+
     def serialize(self):
         # NEITHER players pos, NOR timeinfo on bombs areserialized/!\
         res = str(self.gridstate)
         res += '|'
+        # gfxs
+        res += str(self.gfxs)
+        res += '|'
+
         res += str(self.bomblist)
         res += '|'
         if self._started_match:
@@ -265,16 +284,19 @@ class WorldModel:
         obj = cls()
         tmp = serial.split('|')
         dico = eval(tmp[0])
-        li = eval(tmp[1])
+        gfxs = eval(tmp[1])
+        obj.gfxs =gfxs
+
+        li = eval(tmp[2])
 
         obj.gridstate = dico
         obj.bomblist = li
         obj._refresh_pl_pos()
-        if tmp[2] == '1':
+        if tmp[3] == '1':
             obj._started_match = True
         else:
             obj._started_match = False
-        if tmp[3] == '0':
+        if tmp[4] == '0':
             pass
         else:
             obj.match_winner = int(tmp[3])

@@ -39,8 +39,8 @@ class MultipGameView(EventReceiver):
             2: open_sprsheet(os.path.join('..', 'assets', 'avatar2.png')),
             3: open_sprsheet(os.path.join('..', 'assets', 'avatar3.png')),
         }
-        self.plcode_to_gfxid = dict()
-        self._free_gfxid = 0
+        self.__plcode_to_gfxid = dict()
+
         # -- end load assets
 
         self._player_infos = list()
@@ -57,6 +57,10 @@ class MultipGameView(EventReceiver):
         self._plz_wait_label = gui.Text(
             'Waiting for other players... Please wait', ft, titlepos, anchortype=gui.Text.ANCHOR_CENTER
         )
+
+    def update_player_gfx(self, plcode, gfxid):
+        print('setting plcode - gfxid association: {} {}'.format(plcode, gfxid))
+        self.__plcode_to_gfxid[plcode] = gfxid
 
     def _refresh_block_n_walls(self):
         del self._invblock_positions[:]
@@ -125,9 +129,15 @@ class MultipGameView(EventReceiver):
             surf.blit(self.invblock_spr, targetpos)
 
         for scrx, scry, plcode in self._player_infos:  # players
-            temp = self.plcode_to_gfxid[plcode]
+            if plcode not in self.__plcode_to_gfxid:  # late sync fix...
+                self.__plcode_to_gfxid[plcode] = self._mod.getgfxid(plcode)
+
+            # general case
+            temp = self.__plcode_to_gfxid[plcode]
             adhoc_img = self.avatar_sprsheets[temp][0]
             surf.blit(adhoc_img, (scrx, scry))
+
+            # - debug
             # pygame.draw.circle(surf, plcolor, (i, j), 32, 0)
 
         for ppos in self._bomb_positions:  # bombs
@@ -162,10 +172,6 @@ class MultipGameView(EventReceiver):
             for tripletinfos in self._mod.irepr.all_players_position():
                 plcode, i, j = tripletinfos
                 ip, jp = MultipGameView.game_to_scr_coords(i, j)
-                if plcode not in self.plcode_to_gfxid:
-                    self.plcode_to_gfxid[plcode] = self._free_gfxid
-                    self._free_gfxid += 1
-
                 self._player_infos.append((ip-glvars.CELL_SIZE_PX//2, jp-glvars.CELL_SIZE_PX//2, plcode))
 
     @staticmethod

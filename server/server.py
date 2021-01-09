@@ -141,7 +141,10 @@ def test_connect():
         if thread is None:
             thread = socketio.start_background_task(server_side_gameloop)
 
-    kwargs = {'playercode': server_logic.gen_username()}
+    new_plcode = server_logic.gen_username()
+    adhoc_gfx = server_logic.world.use_new_gfxid(new_plcode)
+    kwargs = {'gamestate': server_logic.world.serialize(), 'playercode': new_plcode, 'chosengfx': adhoc_gfx}
+
     notify(None, 'connection_ok', kwargs)
 
 
@@ -162,7 +165,15 @@ def on_join(data):
 
     onlyroom = rname  # temp.: for now theres only one active room tbh
     print('{} has entered {}'.format(plcode, rname))
-    notify(rname, 'other_guy_came', {'gamestate': server_logic.world.serialize()})
+    alldatas = {
+        'gamestate': server_logic.world.serialize(),
+        'playercode': int(plcode),
+        'chosengfx': server_logic.world.gfxs[int(plcode)]
+    }
+    notify(rname, 'other_guy_came', alldatas)
+    print('other_guy_came')
+    print(str(alldatas['chosengfx']))
+    print('  ~~')
 
 
 @socketio.on('leave')

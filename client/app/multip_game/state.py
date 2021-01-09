@@ -21,7 +21,7 @@ class MultipGameState(BaseGameState):
 
         self.c = MultiplayerGmCtrl()
         self.c.turn_on()
-        self.c2 = PacketRecvCtrl(self.m)
+        self.c2 = PacketRecvCtrl(self.m, self.v)
         self.c2.turn_on()
 
         socketio_bridge.enable()

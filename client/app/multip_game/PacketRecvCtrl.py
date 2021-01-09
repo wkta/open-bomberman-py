@@ -13,10 +13,11 @@ class PacketRecvCtrl(EventReceiver):
     handles all incoming network-related events
     """
 
-    def __init__(self, given_mod: WorldSubjectMod):
+    def __init__(self, given_mod: WorldSubjectMod, view):
         super().__init__()
         self._mod = given_mod
         self._last_sync = None
+        self._view = view
 
         # for a super basic countdown...
         self._debug_countdown = None
@@ -41,14 +42,17 @@ class PacketRecvCtrl(EventReceiver):
                     self._debug_countdown = None
 
         elif ev.type == MyEvTypes.ConnectionOk:
-            print('server login OK')
-            print(ev.playercode)
             glvars.local_pl_code = ev.playercode
             glvars.allplayers.add(ev.playercode)
+
+            tmp = WorldModel.deserialize(ev.gamestate)
+            self._mod.irepr.sync_state(tmp)
+            self._mod.tag_gs_change()
+
             socketio_bridge.join_room(glvars.local_pl_code, 1)
-            # self.force_gs_sync()
 
         elif ev.type == MyEvTypes.OtherGuyCame:
+
             tmp = WorldModel.deserialize(ev.gamestate)
             self._mod.irepr.sync_state(tmp)
             self._mod.tag_gs_change()

@@ -42,14 +42,14 @@ MyEvTypes = enum_for_custom_event_types(
     'BombsetChanges',  # contains>> info:set of bomb locations
 
     # - network-related
-    'ConnectionOk',  # contains>> playercode:int
+    'ConnectionOk',  # contains>> playercode: int,  chosengfx: int
     'ServerStartingMatch',  # the server automatically starts a new match after 10sec
 
     'ChallengeStarts',
     'ChallengeEnds',  # someone just won => the game ends
 
     # - INGAME network-related
-    'OtherGuyCame',  # contains gamestate
+    'OtherGuyCame',  # contains gamestate, playercode: int,  chosengfx: int
     'PlayerMovement',  # contains>> plcode:int, new_pos:list
     'BombCreation',  # contains>> author:int, genesis_t:float, x:int, y:int
     'BombExplosion',  # contains>> x:int, y:int
