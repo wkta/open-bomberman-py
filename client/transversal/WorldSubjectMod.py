@@ -1,6 +1,6 @@
+from WorldModel import WorldModel
 from coremon_main import CogObject
 from def_gevents import MyEvTypes
-from WorldModel import WorldModel
 
 
 class WorldSubjectMod(CogObject):

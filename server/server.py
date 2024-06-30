@@ -12,40 +12,17 @@ from PlayerAction import PlayerAction
 from WorldModel import WorldModel
 from def_gevents import SERV_COMM_KEY
 
-thread = None
-thread_lock = Lock()
-
-# app = Flask(__name__)
-# app.config['SECRET_KEY'] = 'vnkdjnfjknfl1232#'
-# socketio = SocketIO(app)
-
-# @app.route('/')
-# def sessions():
-#    return render_template('session.html')
-
-# def messageReceived(methods=['GET', 'POST']):
-#    print('message was received!!!')
-
-# @socketio.on('my event')
-# def handle_my_custom_event(json, methods=['GET', 'POST']):
-#    print('received my event: ' + str(json))
-#    socketio.emit('my response', json, callback=messageReceived)
-
-# if __name__ == '__main__':
-#     socketio.run(app, port=tmp['port'], host=tmp['host']) #debug=True)
-#     #socketio.run(app, port=8100, host='0.0.0.0')
-
-# - temporaire
-onlyroom = None
-async_mode = "gevent"
-
-app = Flask(__name__)
-socketio = SocketIO(app, async_mode=async_mode)
 
 _parser = argparse.ArgumentParser(add_help=False)
 _parser.add_argument('-h', '--host', help='specify host', required=True)
 _parser.add_argument('-p', '--port', help='specify port', required=True)
 
+server_gamelogic_thread = None
+thread_lock = Lock()
+onlyroom = None
+async_mode = "gevent"
+app = Flask(__name__)
+socketio = SocketIO(app, async_mode=async_mode)
 cpt = 0
 gs_init = False
 
@@ -82,19 +59,6 @@ def move(plcode, direct):
     return jsonify(server_logic.world.player_location(plcode))
 
 
-# @app.route('/statesig')
-# def statesig():
-#     #global gs_init, gamestate
-#     #if not gs_init:
-#     #    gs_init = server_logic.loadstate(gamestate)
-#     m = hashlib.sha224()
-#     clients = list(gamestate.keys())
-#     clients.sort()
-#     for c in clients:
-#         m.update('{}{}{}'.format(c, gamestate[c][0], gamestate[c][1]).encode('ascii'))
-#     return jsonify(m.hexdigest())
-
-
 @app.route('/save')
 def save():
     pass
@@ -103,48 +67,17 @@ def save():
 # /////////////////////////////////////
 #  websockets interface
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-@socketio.on('push_action')
-def handle_push_action(act_serial):
-    player_action = PlayerAction.deserialize(act_serial)
-    da_actorid = player_action.actor_id
-    act_type = player_action.action_t
-
-    room_name = server_logic.fetch_room(da_actorid)
-    assert room_name is not None
-
-    # - create bomb
-    if PlayerAction.T_BOMB == act_type:
-        with thread_lock:
-            print('player {} is posing bomb!'.format(da_actorid))
-
-            new_b_date = time.time() + WorldModel.BOMB_DELAY
-            server_logic.world.drop_bomb(da_actorid, new_b_date)
-
-            kwargs = {'gamestate': server_logic.world.serialize()}
-            notify(room_name, 'bomb_creation', kwargs)
-
-    # - movements
-    elif PlayerAction.T_MOVEMENT == act_type:
-        change_occurs = server_logic.maj_gamestate(da_actorid, int(player_action.direction))
-
-        if change_occurs:
-            kwargs = {'gamestate': server_logic.world.serialize()}
-            notify(room_name, 'player_movement', kwargs)
-
-
 @socketio.on('connect')
 def test_connect():
-    global thread, socketio
+    global server_gamelogic_thread, socketio
     print('***reception socketio.connect***')
-
     with thread_lock:
-        if thread is None:
-            thread = socketio.start_background_task(server_side_gameloop)
+        if server_gamelogic_thread is None:  # need to start only 1 gamelogic thread, no more!
+            server_gamelogic_thread = socketio.start_background_task(server_side_gameloop)
 
     new_plcode = server_logic.gen_username()
     adhoc_gfx = server_logic.world.use_new_gfxid(new_plcode)
     kwargs = {'gamestate': server_logic.world.serialize(), 'playercode': new_plcode, 'chosengfx': adhoc_gfx}
-
     notify(None, 'connection_ok', kwargs)
 
 
@@ -156,13 +89,11 @@ def test_disconnect():
 @socketio.on('join')
 def on_join(data):
     global onlyroom
-
     rname = 'bomberman#{}'.format(data['room_num'])
     join_room(rname)
     server_logic.save_room(data['username'], rname)
     plcode = data['username']
     server_logic.world.spawn_player(plcode, time.time())
-
     onlyroom = rname  # temp.: for now theres only one active room tbh
     print('{} has entered {}'.format(plcode, rname))
     alldatas = {
@@ -173,7 +104,6 @@ def on_join(data):
     notify(rname, 'other_guy_came', alldatas)
     print('other_guy_came')
     print(str(alldatas['chosengfx']))
-    print('  ~~')
 
 
 @socketio.on('leave')
@@ -181,16 +111,43 @@ def on_leave(data):
     rname = 'bomberman#{}'.format(data['room_num'])
     leave_room(rname)
     server_logic.save_room(data['username'], None)
-
     print('{} has left {}'.format(data['username'], rname))
 
 
-def broadcast_event(e_type_camelcase):
+@socketio.on('push_action')
+def handle_push_action(act_serial):
+    player_action = PlayerAction.deserialize(act_serial)
+    da_actorid = player_action.actor_id
+    act_type = player_action.action_t
+    room_name = server_logic.fetch_room(da_actorid)
+    if room_name is None:
+        raise ValueError('at that point room_name shouldnt be None')
+
+    if PlayerAction.T_BOMB == act_type:  # game action: plant bomb
+        with thread_lock:
+            print('player {} is posing bomb!'.format(da_actorid))
+            new_b_date = time.time() + WorldModel.BOMB_DELAY
+            server_logic.world.drop_bomb(da_actorid, new_b_date)
+            kwargs = {'gamestate': server_logic.world.serialize()}
+            notify(room_name, 'bomb_creation', kwargs)
+
+    elif PlayerAction.T_MOVEMENT == act_type:  # game action: move
+        change_occurs = server_logic.maj_gamestate(da_actorid, int(player_action.direction))
+        if change_occurs:
+            kwargs = {'gamestate': server_logic.world.serialize()}
+            notify(room_name, 'player_movement', kwargs)
+
+
+def broadcast_event(e_type_camelcase) -> None:
+    """
+    A special way to emit... it is not dependant on the active http connection
+    :param e_type_camelcase: str, the game event type
+    """
     global socketio
-    # special way to emit... Non dependant of the active http connection
     socketio.emit(
-        'server_notification',
-        {SERV_COMM_KEY: e_type_camelcase, 'gamestate': server_logic.world.serialize()}
+        'server_notification', {
+            SERV_COMM_KEY: e_type_camelcase, 'gamestate': server_logic.world.serialize()
+        }
     )
 
 
