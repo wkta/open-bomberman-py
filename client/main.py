@@ -1,17 +1,16 @@
 import sys
-sys.path.append('../vendor')
 
+# sys.path.append('../vendor')
 import coremon_main
 import glvars
-from def_gamestates import GameStates
 from coremon_main.runners import StackBasedGameCtrl
 from coremon_netw.NetwMsgCtrl import NetwMsgCtrl
+from def_gamestates import GameStates
 from glvars import SCR_SIZE, GAME_TITLE
 
 
-# 16h30
-if coremon_main.vernum != '0.0.5':
-    print('err! expected version of coremon>=0.0.5')
+if coremon_main.vernum not in('0.0.4', '0.0.5'):
+    print('err! expected version of coremon>=0.0.4')
     sys.exit(1)
 
 

@@ -1,4 +1,4 @@
-from collections import Sized
+from collections.abc import Sized
 
 import pygame
 from pygame.locals import QUIT

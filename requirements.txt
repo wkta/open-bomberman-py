@@ -1,0 +1,7 @@
+pygame
+python-socketio==5.0.3
+gevent
+websocket-client
+gevent-websocket
+flask-socketio
+requests
